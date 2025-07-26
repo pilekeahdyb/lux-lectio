@@ -1,0 +1,27 @@
+{
+  "office": "Sexte",
+  "date": "2025-08-10",
+  "semaine_psautier": "semaine IV",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "dimanche",
+  "contenu": {
+    "hymne": "Hymne pour sexte du dimanche",
+    "antiennes": [
+      "Antienne 1 pour sexte",
+      "Antienne 2 pour sexte"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour sexte",
+      "cantique": "Texte du cantique pour sexte",
+      "psaume2": "Texte du psaume 2 pour sexte"
+    },
+    "lecture": "Lecture pour sexte",
+    "répons": "Répons pour sexte",
+    "intercessions": [
+      "Intercession 1 pour sexte",
+      "Intercession 2 pour sexte"
+    ],
+    "oraison": "Oraison pour sexte",
+    "bénédiction": "Bénédiction pour sexte"
+  }
+}

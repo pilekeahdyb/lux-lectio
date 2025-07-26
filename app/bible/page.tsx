@@ -85,20 +85,26 @@ export default function BiblePage() {
   const fetchChapterContent = async (bookId: string, chapter: number) => {
     setLoading(true)
     try {
-      // Simulation d'appel API AELF pour récupérer le contenu biblique
-      // Dans une vraie implémentation, ceci ferait appel à l'API AELF
-      const response = await fetch(`https://api.aelf.org/v1/bible/${bookId}/${chapter}`)
-
-      if (response.ok) {
-        const data = await response.json()
-        setChapterContent(data.content || "Contenu non disponible")
+      // Appel à l'API interne Next.js
+      const res = await fetch(`/api/bible/${bookId}/${chapter}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.verses && Array.isArray(data.verses) && data.verses.length > 0) {
+          setChapterContent(
+            `<div class="space-y-2">` +
+              data.verses.map((v: any) => `<p><span class="font-bold text-liturgical-primary">${v.verse}</span> ${v.text}</p>`).join("") +
+            `</div>`
+          )
+        } else if (data.content) {
+          setChapterContent(`<div class="prose">${data.content}</div>`)
+        } else {
+          setChapterContent("Contenu non disponible")
+        }
       } else {
-        // Contenu de démonstration
-        setChapterContent(generateDemoContent(bookId, chapter))
+        setChapterContent("Contenu non disponible")
       }
     } catch (error) {
-      console.error("Erreur lors du chargement:", error)
-      setChapterContent(generateDemoContent(bookId, chapter))
+      setChapterContent("Erreur lors du chargement du chapitre")
     } finally {
       setLoading(false)
     }
@@ -150,15 +156,20 @@ export default function BiblePage() {
           book: "Jean",
           chapter: 3,
           verse: 16,
-          text: "Car Dieu a tellement aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne se perde pas, mais obtienne la vie éternelle.",
+          text: "Car Dieu a tellement aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne se perde pas, mais obtienne la vie éternelle."
         },
         {
           book: "Matthieu",
           chapter: 5,
           verse: 14,
-          text: "Vous êtes la lumière du monde. Une ville située sur une montagne ne peut être cachée.",
+          text: "Vous êtes la lumière du monde. Une ville située sur une montagne ne peut être cachée."
         },
-        { book: "1 Jean", chapter: 4, verse: 8, text: "Celui qui n'aime pas n'a pas connu Dieu, car Dieu est amour." },
+        {
+          book: "1 Jean",
+          chapter: 4,
+          verse: 8,
+          text: "Celui qui n'aime pas n'a pas connu Dieu, car Dieu est amour."
+        }
       ].filter((verse) => verse.text.toLowerCase().includes(query.toLowerCase()))
 
       setSearchResults(mockResults)

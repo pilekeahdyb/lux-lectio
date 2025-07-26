@@ -1,0 +1,27 @@
+{
+  "office": "Laudes",
+  "date": "2025-06-15",
+  "semaine_psautier": "semaine IV",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "dimanche",
+  "contenu": {
+    "hymne": "Hymne pour laudes du dimanche",
+    "antiennes": [
+      "Antienne 1 pour laudes",
+      "Antienne 2 pour laudes"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour laudes",
+      "cantique": "Texte du cantique pour laudes",
+      "psaume2": "Texte du psaume 2 pour laudes"
+    },
+    "lecture": "Lecture pour laudes",
+    "répons": "Répons pour laudes",
+    "intercessions": [
+      "Intercession 1 pour laudes",
+      "Intercession 2 pour laudes"
+    ],
+    "oraison": "Oraison pour laudes",
+    "bénédiction": "Bénédiction pour laudes"
+  }
+}

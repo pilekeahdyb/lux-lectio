@@ -1,0 +1,27 @@
+{
+  "office": "Office des lectures",
+  "date": "2025-10-14",
+  "semaine_psautier": "semaine II",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "mardi",
+  "contenu": {
+    "hymne": "Hymne pour office_des_lectures du mardi",
+    "antiennes": [
+      "Antienne 1 pour office_des_lectures",
+      "Antienne 2 pour office_des_lectures"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour office_des_lectures",
+      "cantique": "Texte du cantique pour office_des_lectures",
+      "psaume2": "Texte du psaume 2 pour office_des_lectures"
+    },
+    "lecture": "Lecture pour office_des_lectures",
+    "répons": "Répons pour office_des_lectures",
+    "intercessions": [
+      "Intercession 1 pour office_des_lectures",
+      "Intercession 2 pour office_des_lectures"
+    ],
+    "oraison": "Oraison pour office_des_lectures",
+    "bénédiction": "Bénédiction pour office_des_lectures"
+  }
+}

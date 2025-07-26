@@ -1,0 +1,27 @@
+{
+  "office": "Vepres",
+  "date": "2025-04-05",
+  "semaine_psautier": "semaine II",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "samedi",
+  "contenu": {
+    "hymne": "Hymne pour vepres du samedi",
+    "antiennes": [
+      "Antienne 1 pour vepres",
+      "Antienne 2 pour vepres"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour vepres",
+      "cantique": "Texte du cantique pour vepres",
+      "psaume2": "Texte du psaume 2 pour vepres"
+    },
+    "lecture": "Lecture pour vepres",
+    "répons": "Répons pour vepres",
+    "intercessions": [
+      "Intercession 1 pour vepres",
+      "Intercession 2 pour vepres"
+    ],
+    "oraison": "Oraison pour vepres",
+    "bénédiction": "Bénédiction pour vepres"
+  }
+}

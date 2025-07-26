@@ -1,0 +1,27 @@
+{
+  "office": "Complies",
+  "date": "2025-10-30",
+  "semaine_psautier": "semaine IV",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "jeudi",
+  "contenu": {
+    "hymne": "Hymne pour complies du jeudi",
+    "antiennes": [
+      "Antienne 1 pour complies",
+      "Antienne 2 pour complies"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour complies",
+      "cantique": "Texte du cantique pour complies",
+      "psaume2": "Texte du psaume 2 pour complies"
+    },
+    "lecture": "Lecture pour complies",
+    "répons": "Répons pour complies",
+    "intercessions": [
+      "Intercession 1 pour complies",
+      "Intercession 2 pour complies"
+    ],
+    "oraison": "Oraison pour complies",
+    "bénédiction": "Bénédiction pour complies"
+  }
+}

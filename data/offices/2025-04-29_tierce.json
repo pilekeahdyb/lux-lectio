@@ -1,0 +1,27 @@
+{
+  "office": "Tierce",
+  "date": "2025-04-29",
+  "semaine_psautier": "semaine II",
+  "temps_liturgique": "Temps ordinaire",
+  "jour_semaine": "mardi",
+  "contenu": {
+    "hymne": "Hymne pour tierce du mardi",
+    "antiennes": [
+      "Antienne 1 pour tierce",
+      "Antienne 2 pour tierce"
+    ],
+    "psaumes": {
+      "psaume1": "Texte du psaume 1 pour tierce",
+      "cantique": "Texte du cantique pour tierce",
+      "psaume2": "Texte du psaume 2 pour tierce"
+    },
+    "lecture": "Lecture pour tierce",
+    "répons": "Répons pour tierce",
+    "intercessions": [
+      "Intercession 1 pour tierce",
+      "Intercession 2 pour tierce"
+    ],
+    "oraison": "Oraison pour tierce",
+    "bénédiction": "Bénédiction pour tierce"
+  }
+}
