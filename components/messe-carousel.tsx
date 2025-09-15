@@ -1,15 +1,20 @@
-"use client"
-
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { ReadingCard } from "./reading-card"
 
-interface MesseCarouselProps {
-  messes: Array<{
-    id: string
-    nom: string
-    lectures: any[] // tableau de lectures (AelfReading)
+import type { AelfReading } from "@/lib/api"
+
+interface Messe {
+  id: string
+  nom: string
+  lectures: Array<AelfReading & {
+    id?: string
+    type?: string
   }>
+}
+
+interface MesseCarouselProps {
+  messes: Messe[]
 }
 
 export function MesseCarousel({ messes }: MesseCarouselProps) {
@@ -23,15 +28,17 @@ export function MesseCarousel({ messes }: MesseCarouselProps) {
     <div className="w-full flex flex-col items-center">
       <div className="flex items-center justify-center gap-4 mb-4">
         <button
-          className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition touch-target"
+          className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition"
           onClick={goPrev}
           aria-label="Messe précédente"
         >
           <ChevronLeft className="w-6 h-6 text-blue-600 dark:text-blue-300" />
         </button>
-        <div className="text-lg font-bold text-blue-800 dark:text-blue-200">{currentMesse.nom}</div>
+        <div className="text-lg font-bold text-blue-800 dark:text-blue-200">
+          {currentMesse.nom}
+        </div>
         <button
-          className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition touch-target"
+          className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition"
           onClick={goNext}
           aria-label="Messe suivante"
         >
@@ -40,13 +47,11 @@ export function MesseCarousel({ messes }: MesseCarouselProps) {
       </div>
       <div className="w-full flex justify-center">
         {/* Carousel horizontal des lectures de la messe courante */}
-        <div
-          className="flex gap-6 overflow-x-auto pb-2 no-scrollbar touch-scroll"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
+        <div className="flex gap-6 overflow-x-auto pb-2 hide-scrollbar">
           {currentMesse.lectures.map((lecture, idx) => (
-            <div key={lecture.id || idx} className="min-w-[340px] max-w-[480px] flex-shrink-0">
-              <ReadingCard reading={lecture} type={lecture.type} />
+    
+    <div key={lecture.id || idx} className="min-w-[340px] max-w-[480px]">
+              <ReadingCard reading={lecture} />
             </div>
           ))}
         </div>
@@ -56,5 +61,5 @@ export function MesseCarousel({ messes }: MesseCarouselProps) {
 }
 
 // CSS pour masquer la scrollbar
-// .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-// .no-scrollbar::-webkit-scrollbar { display: none; }
+// .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+// .hide-scrollbar::-webkit-scrollbar { display: none; }

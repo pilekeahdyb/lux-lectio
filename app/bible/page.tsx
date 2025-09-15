@@ -40,19 +40,10 @@ const bibleBooks: BibleBook[] = [
   { id: "2r", name: "2 Rois", chapters: 25, testament: "AT" },
   { id: "ps", name: "Psaumes", chapters: 150, testament: "AT" },
   { id: "pr", name: "Proverbes", chapters: 31, testament: "AT" },
-  { id: "ec", name: "Ecclésiaste", chapters: 12, testament: "AT" },
   { id: "is", name: "Isaïe", chapters: 66, testament: "AT" },
   { id: "jr", name: "Jérémie", chapters: 52, testament: "AT" },
-  { id: "ba", name: "Baruch", chapters: 6, testament: "AT" },
   { id: "ez", name: "Ézéchiel", chapters: 48, testament: "AT" },
   { id: "dn", name: "Daniel", chapters: 14, testament: "AT" },
-  { id: "am", name: "Amos", chapters: 9, testament: "AT" },
-  { id: "es", name: "Esther", chapters: 16, testament: "AT" },
-  { id: "hos", name: "Hosea", chapters: 14, testament: "AT" },
-  { id: "hag", name: "Haggai", chapters: 2, testament: "AT" },
-  { id: "hab", name: "Habakkuk", chapters: 3, testament: "AT" },
-  { id: "ezr", name: "Ezra", chapters: 10, testament: "AT" },
-  { id: "1ch", name: "1 Chroniques", chapters: 29, testament: "AT" },
 
   // Nouveau Testament
   { id: "mt", name: "Matthieu", chapters: 28, testament: "NT" },
@@ -75,6 +66,8 @@ const bibleBooks: BibleBook[] = [
   { id: "phm", name: "Philémon", chapters: 1, testament: "NT" },
   { id: "he", name: "Hébreux", chapters: 13, testament: "NT" },
   { id: "jc", name: "Jacques", chapters: 5, testament: "NT" },
+  { id: "1p", name: "1 Pierre", chapters: 5, testament: "NT" },
+  { id: "2p", name: "2 Pierre", chapters: 3, testament: "NT" },
   { id: "1jn", name: "1 Jean", chapters: 5, testament: "NT" },
   { id: "2jn", name: "2 Jean", chapters: 1, testament: "NT" },
   { id: "3jn", name: "3 Jean", chapters: 1, testament: "NT" },
@@ -95,74 +88,33 @@ export default function BiblePage() {
   const fetchChapterContent = async (bookId: string, chapter: number) => {
     setLoading(true)
     try {
-      let data: any = null
-
-      const bookFileMap: { [key: string]: string } = {
-        gn: "genesis",
-        ex: "exodus",
-        dt: "deuteronomy",
-        ec: "ecclesiastes",
-        ep: "ephesians",
-        ba: "baruch",
-        am: "amos",
-        ac: "acts",
-        dn: "daniel",
-        col: "colossians",
-        es: "esther",
-        ga: "galatians",
-        he: "hebrews",
-        "1co": "i_corinthians",
-        hos: "hosea",
-        ez: "ezekiel",
-        hag: "haggai",
-        hab: "habakkuk",
-        ezr: "ezra",
-        "1ch": "i_chronicles",
+      // On tente de charger dynamiquement le fichier JSON du livre
+      let data: any = null;
+      if (bookId === 'gn') {
+        data = await import(`../../public/genese.json`);
+      } else if (bookId === 'ex') {
+        data = await import(`../../public/exode.json`);
+      } else if (bookId === 'lv') {
+        data = await import(`../../public/levitique.json`);
+      } else if (bookId === 'nb') {
+        data = await import(`../../public/nombres.json`);
+      } else if (bookId === 'dt') {
+        data = await import(`../../public/deuteronome.json`);
       }
-
-      const fileName = bookFileMap[bookId]
-      if (fileName) {
-        // Try to load the JSON file
-        const response = await fetch(`/bible/${fileName}.json`)
-        if (response.ok) {
-          data = await response.json()
-        }
-      }
-
-      if (data && data.chapters) {
-        // Find the requested chapter
-        const chapterData = data.chapters.find((c: any) => c.chapter === chapter)
-        if (chapterData && chapterData.verses) {
-          setChapterVerses(chapterData.verses)
-          setChapterContent("")
-        } else {
-          setChapterContent(generateDemoContent(bookId, chapter))
-          setChapterVerses([])
-        }
+      if (data && data.chapitres) {
+        const chapObj = data.chapitres.find((c: any) => c.chapitre === chapter);
+        const verses = chapObj ? chapObj.versets : [];
+        setChapterVerses(verses);
+        setChapterContent("");
       } else {
-        // Fallback for books not yet available
-        if (bookId === "gn") {
-          data = await import(`../../public/genese.json`)
-          if (data && data.chapitres) {
-            const chapObj = data.chapitres.find((c: any) => c.chapitre === chapter)
-            const verses = chapObj ? chapObj.versets : []
-            setChapterVerses(verses)
-            setChapterContent("")
-          } else {
-            setChapterContent(generateDemoContent(bookId, chapter))
-            setChapterVerses([])
-          }
-        } else {
-          setChapterContent(generateDemoContent(bookId, chapter))
-          setChapterVerses([])
-        }
+        setChapterContent(generateDemoContent(bookId, chapter));
+        setChapterVerses([]);
       }
     } catch (error) {
-      console.error("Error loading chapter:", error)
-      setChapterContent(generateDemoContent(bookId, chapter))
-      setChapterVerses([])
+      setChapterContent(generateDemoContent(bookId, chapter));
+      setChapterVerses([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -170,9 +122,9 @@ export default function BiblePage() {
     const book = bibleBooks.find((b) => b.id === bookId)
     if (!book) return "Livre non trouvé"
     return `<div class="text-center py-8">
-      <Book className="h-12 w-12 text-liturgical-primary mx-auto mb-4" />
-      <p class="text-muted-foreground">Contenu de ${book.name} ${chapter} non trouvé dans la Bible de Jérusalem.</p>
-      <p class="text-sm text-muted-foreground mt-2">Merci de signaler ce bug ou d'essayer un autre chapitre.</p>
+      <Book className=\"h-12 w-12 text-liturgical-primary mx-auto mb-4\" />
+      <p class=\"text-muted-foreground\">Contenu de ${book.name} ${chapter} non trouvé dans la Bible de Jérusalem.</p>
+      <p class=\"text-sm text-muted-foreground mt-2\">Merci de signaler ce bug ou d'essayer un autre chapitre.</p>
     </div>`
   }
 
@@ -232,35 +184,34 @@ export default function BiblePage() {
   }, [selectedBook, selectedChapter])
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="mb-4 sm:mb-6 animate-slide-in-right">
-        <h1 className="text-2xl sm:text-3xl font-bold text-liturgical-primary mb-2">Sainte Bible</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Parole de Dieu pour nourrir votre foi</p>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-6 animate-slide-in-right">
+        <h1 className="text-3xl font-bold text-liturgical-primary mb-2">Sainte Bible</h1>
+        <p className="text-muted-foreground">Parole de Dieu pour nourrir votre foi</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Panneau de navigation */}
-        <div className="lg:col-span-1 space-y-3 sm:space-y-4 animate-slide-in-left">
+        <div className="lg:col-span-1 space-y-4 animate-slide-in-left">
           {/* Recherche */}
           <Card className="liturgical-card hover-lift">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="flex items-center text-liturgical-primary text-base sm:text-lg">
-                <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <CardHeader>
+              <CardTitle className="flex items-center text-liturgical-primary">
+                <Search className="h-5 w-5 mr-2" />
                 Rechercher
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3 sm:space-y-4">
+            <CardContent>
+              <div className="space-y-4">
                 <Input
                   placeholder="Rechercher dans la Bible..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && searchBible(searchQuery)}
-                  className="text-sm sm:text-base"
                 />
                 <Button
                   onClick={() => searchBible(searchQuery)}
-                  className="w-full bg-liturgical-primary hover:bg-liturgical-secondary text-sm sm:text-base"
+                  className="w-full bg-liturgical-primary hover:bg-liturgical-secondary"
                   disabled={loading}
                 >
                   {loading ? "Recherche..." : "Rechercher"}
@@ -271,17 +222,17 @@ export default function BiblePage() {
 
           {/* Sélection de livre */}
           <Card className="liturgical-card hover-lift">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="flex items-center text-liturgical-primary text-base sm:text-lg">
-                <Book className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <CardHeader>
+              <CardTitle className="flex items-center text-liturgical-primary">
+                <Book className="h-5 w-5 mr-2" />
                 Livres de la Bible
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3 sm:space-y-4">
+            <CardContent>
+              <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-xs sm:text-sm text-liturgical-text mb-2">Ancien Testament</h4>
-                  <div className="grid grid-cols-1 gap-1 max-h-32 sm:max-h-40 overflow-y-auto">
+                  <h4 className="font-semibold text-sm text-liturgical-text mb-2">Ancien Testament</h4>
+                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto">
                     {bibleBooks
                       .filter((book) => book.testament === "AT")
                       .map((book) => (
@@ -293,17 +244,17 @@ export default function BiblePage() {
                             setSelectedBook(book)
                             setSelectedChapter(1)
                           }}
-                          className="justify-start text-xs hover-lift h-8 sm:h-9"
+                          className="justify-start text-xs hover-lift"
                         >
-                          <span className="truncate">{book.name}</span>
+                          {book.name}
                         </Button>
                       ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-xs sm:text-sm text-liturgical-text mb-2">Nouveau Testament</h4>
-                  <div className="grid grid-cols-1 gap-1 max-h-32 sm:max-h-40 overflow-y-auto">
+                  <h4 className="font-semibold text-sm text-liturgical-text mb-2">Nouveau Testament</h4>
+                  <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto">
                     {bibleBooks
                       .filter((book) => book.testament === "NT")
                       .map((book) => (
@@ -315,9 +266,9 @@ export default function BiblePage() {
                             setSelectedBook(book)
                             setSelectedChapter(1)
                           }}
-                          className="justify-start text-xs hover-lift h-8 sm:h-9"
+                          className="justify-start text-xs hover-lift"
                         >
-                          <span className="truncate">{book.name}</span>
+                          {book.name}
                         </Button>
                       ))}
                   </div>
@@ -329,23 +280,18 @@ export default function BiblePage() {
           {/* Signets */}
           {bookmarks.length > 0 && (
             <Card className="liturgical-card hover-lift">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex items-center text-liturgical-primary text-base sm:text-lg">
-                  <Bookmark className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              <CardHeader>
+                <CardTitle className="flex items-center text-liturgical-primary">
+                  <Bookmark className="h-5 w-5 mr-2" />
                   Mes signets
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent>
                 <div className="space-y-2">
                   {bookmarks.map((bookmark, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-liturgical-bg rounded">
-                      <span className="text-xs sm:text-sm text-liturgical-text truncate flex-1 mr-2">{bookmark}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleBookmark(bookmark)}
-                        className="h-6 w-6 flex-shrink-0"
-                      >
+                      <span className="text-sm text-liturgical-text">{bookmark}</span>
+                      <Button variant="ghost" size="icon" onClick={() => toggleBookmark(bookmark)} className="h-6 w-6">
                         <Star className={`h-3 w-3 fill-current text-liturgical-primary`} />
                       </Button>
                     </div>
@@ -357,110 +303,33 @@ export default function BiblePage() {
         </div>
 
         {/* Contenu principal */}
-        <div className="lg:col-span-2 space-y-3 sm:space-y-4 animate-slide-in-right">
+        <div className="lg:col-span-2 space-y-4 animate-slide-in-right">
           {/* Résultats de recherche */}
           {searchResults.length > 0 && (
             <Card className="liturgical-card hover-lift">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="text-liturgical-primary text-base sm:text-lg">Résultats de recherche</CardTitle>
+              <CardHeader>
+                <CardTitle className="text-liturgical-primary">Résultats de recherche</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3 sm:space-y-4">
+              <CardContent>
+                <div className="space-y-4">
                   {searchResults.map((result, index) => (
-                    <div
-                      key={index}
-                      className="p-3 sm:p-4 bg-liturgical-bg rounded-lg border-l-4 border-liturgical-primary"
-                    >
+                    <div key={index} className="p-4 bg-liturgical-bg rounded-lg border-l-4 border-liturgical-primary">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary text-xs">
+                        <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary">
                           {result.book} {result.chapter}:{result.verse}
                         </Badge>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => toggleBookmark(`${result.book} ${result.chapter}:${result.verse}`)}
-                          className="h-6 w-6 flex-shrink-0"
+                          className="h-6 w-6"
                         >
                           <Star
                             className={`h-3 w-3 ${bookmarks.includes(`${result.book} ${result.chapter}:${result.verse}`) ? "fill-current text-liturgical-primary" : ""}`}
                           />
                         </Button>
                       </div>
-                      <p className="text-xs sm:text-sm leading-relaxed">{result.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {selectedBook && chapterVerses.length > 0 && (
-            <Card className="liturgical-card hover-lift">
-              <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between text-liturgical-primary text-base sm:text-lg gap-2">
-                  <span className="truncate">
-                    {selectedBook.name} - Chapitre {selectedChapter}
-                  </span>
-                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedChapter(Math.max(1, selectedChapter - 1))}
-                      disabled={selectedChapter <= 1}
-                      className="h-8 w-8 p-0"
-                    >
-                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
-                    <Select
-                      value={selectedChapter.toString()}
-                      onValueChange={(value) => setSelectedChapter(Number.parseInt(value))}
-                    >
-                      <SelectTrigger className="w-16 sm:w-20 h-8 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((ch) => (
-                          <SelectItem key={ch} value={ch.toString()}>
-                            {ch}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedChapter(Math.min(selectedBook.chapters, selectedChapter + 1))}
-                      disabled={selectedChapter >= selectedBook.chapters}
-                      className="h-8 w-8 p-0"
-                    >
-                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-0">
-                  {chapterVerses.map((verse, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start group hover:bg-liturgical-bg/30 transition-colors duration-200"
-                    >
-                      <span className="text-xs font-bold text-liturgical-primary w-8 flex-shrink-0 text-left pt-1">
-                        {verse.verse}
-                      </span>
-                      <div className="flex-1 py-1">
-                        <p className="text-sm leading-relaxed text-justify">{verse.text}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleBookmark(`${selectedBook.name} ${selectedChapter}:${verse.verse}`)}
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 float-right -mt-6"
-                        >
-                          <Star
-                            className={`h-3 w-3 ${bookmarks.includes(`${selectedBook.name} ${selectedChapter}:${verse.verse}`) ? "fill-current text-liturgical-primary" : ""}`}
-                          />
-                        </Button>
-                      </div>
+                      <p className="text-sm leading-relaxed">{result.text}</p>
                     </div>
                   ))}
                 </div>
@@ -469,25 +338,22 @@ export default function BiblePage() {
           )}
 
           {/* Lecteur de chapitre + barre de navigation lectures */}
-          {selectedBook && chapterVerses.length === 0 && chapterContent && (
+          {selectedBook && (
             <>
               {/* Barre de navigation lectures - scroll horizontal */}
-              <div
-                className="flex overflow-x-auto no-scrollbar gap-4 mb-6 px-2"
-                style={{ WebkitOverflowScrolling: "touch" }}
-              >
+              <div className="flex overflow-x-auto no-scrollbar gap-4 mb-6 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {["lecture_1", "psaume", "lecture_2", "evangile"].map((type, idx) => {
                   // Lecture active = nette, autres = floues
                   // Pour la démo, lecture_1 est active
-                  const isActive = idx === 0
+                  const isActive = idx === 0;
                   return (
                     <button
                       key={type}
                       className={`min-w-[140px] px-4 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none ${isActive ? "bg-liturgical-primary text-white shadow-lg" : "bg-liturgical-primary/10 text-liturgical-primary opacity-60 blur-sm"}`}
                       style={{ filter: isActive ? "none" : "blur(2px)", opacity: isActive ? 1 : 0.6 }}
                       onClick={() => {
-                        const el = document.getElementById(type)
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+                        const el = document.getElementById(type);
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                       }}
                     >
                       {type === "lecture_1" && "Première lecture"}
@@ -495,7 +361,7 @@ export default function BiblePage() {
                       {type === "lecture_2" && "Deuxième lecture"}
                       {type === "evangile" && "Évangile"}
                     </button>
-                  )
+                  );
                 })}
               </div>
               {/* Slider horizontal des lectures avec ReadingCard et données réelles du jour */}
@@ -513,47 +379,36 @@ export default function BiblePage() {
                       chapterVerses.find((v: any) => v.type === "lecture_2"),
                       // evangile
                       chapterVerses.find((v: any) => v.type === "evangile"),
-                    ].filter(Boolean)
+                    ].filter(Boolean);
                     return lecturesData.map((lecture, idx) => (
                       <div key={lecture.type || idx} className="flex-shrink-0 w-[340px]">
-                        <ReadingCard
-                          reading={lecture}
-                          type={lecture.type as any}
-                          className={idx === 0 ? "" : "opacity-60 blur-sm"}
-                        />
+                        <ReadingCard reading={lecture} type={lecture.type as any} className={idx === 0 ? "" : "opacity-60 blur-sm"} />
                       </div>
-                    ))
+                    ));
                   })()}
                 </div>
               </div>
-              <Card className="liturgical-card hover-lift">
-                <CardContent className="p-6">
-                  <div dangerouslySetInnerHTML={{ __html: chapterContent }} />
-                </CardContent>
-              </Card>
             </>
           )}
 
           {/* Message d'accueil */}
           {!selectedBook && searchResults.length === 0 && (
             <Card className="liturgical-card hover-lift">
-              <CardContent className="p-6 sm:p-8 text-center">
-                <Book className="h-12 w-12 sm:h-16 sm:w-16 text-liturgical-primary mx-auto mb-4 animate-float" />
-                <h3 className="text-lg sm:text-xl font-semibold text-liturgical-primary mb-2">
-                  Bienvenue dans la Bible
-                </h3>
-                <p className="text-sm sm:text-base text-muted-foreground mb-4">
+              <CardContent className="p-8 text-center">
+                <Book className="h-16 w-16 text-liturgical-primary mx-auto mb-4 animate-float" />
+                <h3 className="text-xl font-semibold text-liturgical-primary mb-2">Bienvenue dans la Bible</h3>
+                <p className="text-muted-foreground mb-4">
                   Choisissez un livre dans le panneau de gauche ou utilisez la recherche pour explorer la Parole de
                   Dieu.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary text-xs">
+                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary">
                     73 livres
                   </Badge>
-                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary text-xs">
+                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary">
                     1189 chapitres
                   </Badge>
-                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary text-xs">
+                  <Badge variant="secondary" className="bg-liturgical-primary/20 text-liturgical-primary">
                     31 102 versets
                   </Badge>
                 </div>

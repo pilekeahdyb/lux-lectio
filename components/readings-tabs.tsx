@@ -1,134 +1,127 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { ReadingCard } from "@/components/reading-card"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useLiturgical } from "@/components/liturgical-provider"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
+import { MassReadings } from "./mass-readings"
+import { OfficeReadings } from "./office-readings"
+import { AelfMesse, AelfOffice } from "@/lib/types/aelf"
 
-interface ReadingsTabsProps {
-  readings: any[]
-  accentColor: string
+const OFFICE_ORDER = [
+  "lectures",
+  "laudes",
+  "tierce",
+  "sexte",
+  "none",
+  "vepres",
+  "complies"
+]
+
+// Composant de chargement
+function LoadingReadings() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-4 w-full" />
+        ))}
+      </div>
+    </div>
+  )
 }
 
-export function ReadingsTabs({ readings, accentColor }: ReadingsTabsProps) {
-  const [activeTab, setActiveTab] = useState(0)
-  const scrollRef = useRef<HTMLDivElement>(null)
+export function ReadingsTabs() {
+  const { liturgicalData, loading, error } = useLiturgical()
 
-  const validReadings =
-    readings?.filter(
-      (reading) =>
-        reading &&
-        typeof reading === "object" &&
-        (reading.title || reading.text || reading.content || reading.antienne),
-    ) || []
-
-  const getReadingInfo = (reading: any, index: number) => {
-    const typeMap = {
-      lecture: { icon: "📖", label: `Lecture ${index + 1}` },
-      psaume: { icon: "🎵", label: "Psaume" },
-      cantique: { icon: "🎵", label: "Cantique" },
-      evangile: { icon: "✝️", label: "Évangile" },
-      sequence: { icon: "🎵", label: "Séquence" },
-      antienne: { icon: "🎵", label: "Antienne" },
-    }
-
-    const type = reading?.type?.toLowerCase() || "lecture"
-    return typeMap[type as keyof typeof typeMap] || { icon: "📄", label: `Lecture ${index + 1}` }
+  if (loading) {
+    return <LoadingReadings />
   }
 
-  const scrollToTab = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 150
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      })
-    }
-  }
-
-  if (validReadings.length === 0) {
+  if (error) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        <p>Aucune lecture disponible</p>
-      </div>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erreur</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (!liturgicalData) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Données non disponibles</AlertTitle>
+        <AlertDescription>
+          Les lectures liturgiques ne sont pas disponibles pour le moment.
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  // Filtrer et trier les offices
+  const sortedOffices = Object.entries(liturgicalData.offices || {})
+    .sort(([keyA], [keyB]) => {
+      const indexA = OFFICE_ORDER.indexOf(keyA)
+      const indexB = OFFICE_ORDER.indexOf(keyB)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
+    .map(([key, office]) => ({
+      key,
+      ...office
+    }))
+
+  // Gérer le cas où il n'y a ni messes ni offices
+  if ((!liturgicalData.messes || liturgicalData.messes.length === 0) && 
+      (!liturgicalData.offices || Object.keys(liturgicalData.offices).length === 0)) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Aucune lecture disponible</AlertTitle>
+        <AlertDescription>
+          Il n'y a pas de lectures disponibles pour cette date.
+        </AlertDescription>
+      </Alert>
     )
   }
 
   return (
-    <div className="w-full space-y-4">
-      <div className="relative w-full max-w-full">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-gray-800 border"
-          onClick={() => scrollToTab("left")}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+    <Tabs defaultValue="messe" className="w-full">
+      <TabsList className="w-full justify-start mb-4">
+        {liturgicalData.messes && liturgicalData.messes.length > 0 && (
+          <TabsTrigger value="messe">Messe</TabsTrigger>
+        )}
+        {sortedOffices.length > 0 && (
+          <TabsTrigger value="offices">Offices</TabsTrigger>
+        )}
+      </TabsList>
 
-        <div className="mx-10 overflow-hidden">
-          <div
-            ref={scrollRef}
-            className="flex gap-3 py-3 overflow-x-auto scrollbar-thin touch-scroll"
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#666 #ddd",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            {validReadings.map((reading, index) => {
-              const info = getReadingInfo(reading, index)
-              const isActive = activeTab === index
-
-              return (
-                <Button
-                  key={index}
-                  variant={isActive ? "default" : "outline"}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 whitespace-nowrap flex-shrink-0 min-w-fit transition-all duration-200 touch-target
-                    ${
-                      isActive
-                        ? `bg-blue-500 hover:bg-blue-600 text-white shadow-lg`
-                        : `hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-700`
-                    }
-                  `}
-                  onClick={() => setActiveTab(index)}
-                >
-                  <span className="text-sm">{info.icon}</span>
-                  <span className="font-medium text-sm">{info.label}</span>
-                </Button>
-              )
-            })}
+      {/* Contenu des messes */}
+      {liturgicalData.messes && liturgicalData.messes.length > 0 && (
+        <TabsContent value="messe" className="mt-4">
+          <div className="space-y-8">
+            {liturgicalData.messes.map((messe, index) => (
+              <MassReadings key={index} messe={messe} />
+            ))}
           </div>
-        </div>
+        </TabsContent>
+      )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-gray-800 border"
-          onClick={() => scrollToTab("right")}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="relative min-h-[400px]">
-        {validReadings.map((reading, index) => (
-          <div
-            key={index}
-            className={`
-              absolute inset-0 transition-all duration-300 ease-in-out
-              ${
-                activeTab === index
-                  ? "opacity-100 translate-x-0 pointer-events-auto"
-                  : "opacity-0 translate-x-4 pointer-events-none"
-              }
-            `}
-          >
-            <ReadingCard reading={reading} type={reading?.type || "lecture"} className="animate-slide-in-right" />
+      {/* Contenu des offices */}
+      {sortedOffices.length > 0 && (
+        <TabsContent value="offices" className="mt-4">
+          <div className="space-y-8">
+            {sortedOffices.map((office) => (
+              <OfficeReadings key={office.key} office={office} />
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
+        </TabsContent>
+      )}
+    </Tabs>
   )
 }

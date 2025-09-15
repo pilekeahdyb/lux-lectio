@@ -3,6 +3,8 @@ import path from "path"
 import fs from "fs/promises"
 import pdfParse from "pdf-parse"
 
+export const dynamic = 'force-dynamic'
+
 // Cache mémoire global pour la Bible indexée
 let bibleCache: null | Record<string, Record<string, string>> = null
 let cacheReady = false
@@ -57,12 +59,24 @@ const bookTitleMap: Record<string, string> = {
   ap: "Apocalypse",
 }
 
-
 // Fonction d'indexation globale (à affiner selon la structure réelle du PDF)
 async function buildBibleCache() {
   if (bibleCache) return
   cacheReady = false
-  const pdfPath = "/workspaces/lux-lectio/public/bible_de_jerusalem.pdf"
+
+  // Résoudre le chemin vers le PDF dans public/
+  const pdfPath = path.resolve(process.cwd(), 'public', 'bible_de_jerusalem.pdf')
+
+  // Vérifier l'existence du fichier, sinon court-circuiter proprement
+  try {
+    await fs.access(pdfPath)
+  } catch {
+    // Pas de PDF disponible -> pas d'indexation, mais on ne jette pas d'exception
+    bibleCache = {}
+    cacheReady = true
+    return
+  }
+
   const data = await fs.readFile(pdfPath)
   const pdf = await pdfParse(data)
   const lines = pdf.text.split('\n')
@@ -92,8 +106,8 @@ async function buildBibleCache() {
     // Découpage par chapitres : on cherche les lignes commençant par 'Genèse N,' (ou autre livre)
     // On généralise pour tous les livres
     const bookPrefix = bookTitle.split(' ')[0] // ex: 'Genèse', 'Exode', ...
-    let currentChapter = null
-    let currentText = []
+    let currentChapter: string | null = null
+    let currentText: string[] = []
     for (const line of bookLines) {
       const chapMatch = line.match(new RegExp(`^${bookPrefix} (\\d+),`))
       if (chapMatch) {
@@ -131,12 +145,12 @@ export async function GET(request: NextRequest) {
     cachePromise = buildBibleCache()
   }
   if (cachePromise) {
-    await cachePromise
+    try { await cachePromise } catch { /* on ignore pour ne pas casser la route */ }
   }
 
   if (!bibleCache || !bibleCache[book] || !bibleCache[book][chapter]) {
     return NextResponse.json({
-      content: `<div class='text-center py-8'>Chapitre non trouvé dans la Bible de Jérusalem. <br/>Merci de signaler ce bug ou d'essayer un autre chapitre.</div>`
+      content: `<div class='text-center py-8'>Chapitre non disponible. Le fichier PDF source est manquant ou non indexé.</div>`
     })
   }
 

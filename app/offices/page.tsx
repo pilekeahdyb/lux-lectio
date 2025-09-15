@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useLiturgical } from "@/components/liturgical-provider"
+import { OfficeReadings } from "@/components/office-readings"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 const offices = [
   {
@@ -87,12 +89,14 @@ export default function OfficesPage() {
       setLoading(true)
       setError(null)
       try {
-        const dateStr = currentDate.toISOString().split("T")[0]
+        // Utiliser la date locale Europe/Paris pour correspondre au calendrier liturgique
+        const dateStr = currentDate.toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' })
         // L'API attend "office-lectures" => "office_lectures"
         const officeParam = selectedOffice.replace("-", "_")
         const res = await fetch(`/api/aelf/offices?date=${dateStr}&office=${officeParam}`)
         if (!res.ok) throw new Error("Erreur lors de la récupération de l'office")
         const data = await res.json()
+        console.log('Données reçues:', data)
         // On prend data.data si présent, sinon data directement (compatibilité)
         setOfficeData(data.data || data)
       } catch (e: any) {
@@ -107,12 +111,6 @@ export default function OfficesPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-liturgical-primary mb-2">Offices des heures</h1>
-        <p className="text-muted-foreground">La prière de l'Église pour sanctifier les heures du jour</p>
-        <p className="text-sm text-liturgical-primary font-medium mt-2">{formatLiturgicalDate(currentDate)}</p>
-      </div>
-
       {!selectedOffice ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {offices.map((office) => (
@@ -149,13 +147,17 @@ export default function OfficesPage() {
 
           {/* Affichage dynamique de l'office */}
           {loading && (
-            <Card><CardContent className="p-8 text-center">Chargement...</CardContent></Card>
+            <Card><CardContent className="p-8 text-center">
+              <LoadingSpinner size="lg" text="Chargement de l'office..." />
+            </CardContent></Card>
           )}
           {error && (
             <Card><CardContent className="p-8 text-center text-red-600">{error}</CardContent></Card>
           )}
           {!loading && !error && officeData && (
-            officeData.html ? (
+            officeData.office ? (
+              <OfficeReadings office={officeData} />
+            ) : officeData.html ? (
               <Card className="border-liturgical-primary/30">
                 <CardHeader>
                   <CardTitle className="text-liturgical-primary">Office (données brutes du site AELF)</CardTitle>
