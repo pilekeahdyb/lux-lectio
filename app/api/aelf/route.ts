@@ -1,115 +1,177 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Fonction utilitaire pour générer une réponse d'erreur
-function errorResponse(message: string, status: number = 500) {
-  console.error(message);
-  return NextResponse.json(
-    { error: true, message },
-    { 
-      status,
+async function checkIfSamediSaint(date: string, zone: string): Promise<boolean> {
+  try {
+    const response = await fetch(`https://www.aelf.org/${date}/${zone}/messe`, {
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-        "Pragma": "no-cache",
-      }
+        "User-Agent": "LuxLectio/1.0",
+        Accept: "text/html",
+      },
+    })
+
+    if (response.ok) {
+      const html = await response.text()
+      return (
+        html.includes("Samedi Saint") || html.includes("veillée pascale") || html.includes("Pour la veillée pascale")
+      )
     }
-  );
+  } catch (error) {
+    console.log("Erreur lors de la vérification du Samedi Saint:", error)
+  }
+  return false
 }
 
-export const dynamic = 'force-dynamic'; // Désactive la mise en cache de la route
-
-async function fetchWithTimeout(url: string, options: RequestInit & { timeout?: number }) {
-  const { timeout = 5000, ...fetchOptions } = options;
-  
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  
+async function handleSamediSaint(date: string, zone: string) {
   try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      signal: controller.signal
-    });
-    clearTimeout(id);
-    return response;
+    // Get the next day (Easter Sunday) for the Easter Vigil readings
+    const dateObj = new Date(date)
+    dateObj.setDate(dateObj.getDate() + 1)
+    const easterSunday = dateObj.toISOString().split("T")[0]
+
+    console.log(`Récupération de la Veillée Pascale pour ${easterSunday}`)
+
+    const vigileEndpoint = `https://api.aelf.org/v1/messes/${easterSunday}/${zone}`
+
+    const response = await fetch(vigileEndpoint, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "LuxLectio/1.0 (Application liturgique)",
+        Referer: "https://www.aelf.org/",
+      },
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+
+      // Find the Easter Vigil mass (usually contains "Vigile" or "Veillée")
+      const vigileData =
+        data.messes?.find(
+          (messe: any) =>
+            messe.nom?.toLowerCase().includes("vigile") ||
+            messe.nom?.toLowerCase().includes("veillée") ||
+            messe.nom?.toLowerCase().includes("pascale"),
+        ) || data.messes?.[0]
+
+      const normalizedData = {
+        informations: {
+          ...data.informations,
+          date: date, // Keep original Samedi Saint date
+          jour_liturgique_nom: "Samedi Saint - Veillée Pascale",
+          couleur: "blanc",
+          temps_liturgique: "paques",
+          semaine: "",
+          fete: "Veillée Pascale",
+        },
+        messes: vigileData ? [vigileData] : [],
+        lectures: {} as { [key: string]: any },
+      }
+
+      // Extract all readings from Easter Vigil
+      if (vigileData?.lectures) {
+        vigileData.lectures.forEach((lecture: any, index: number) => {
+          const lectureKey = lecture.type || `lecture_${index + 1}`
+          normalizedData.lectures[lectureKey] = {
+            type: lecture.type || `lecture_${index + 1}`,
+            titre: lecture.titre || `Lecture ${index + 1}`,
+            contenu: lecture.contenu || "",
+            reference: lecture.reference || lecture.ref || "",
+            ref: lecture.ref || lecture.reference || "",
+            refrain_psalmique: lecture.refrain_psalmique || null,
+            verset_evangile: lecture.verset_evangile || null,
+            intro_lue: lecture.intro_lue || null,
+            ref_refrain: lecture.ref_refrain || null,
+            ref_verset: lecture.ref_verset || null,
+          }
+        })
+      }
+
+      return NextResponse.json(normalizedData, {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
+    }
   } catch (error) {
-    clearTimeout(id);
-    throw error;
+    console.error("Erreur lors de la récupération de la Veillée Pascale:", error)
   }
+
+  // Fallback: return minimal Samedi Saint data
+  return NextResponse.json(
+    {
+      informations: {
+        date: date,
+        jour_liturgique_nom: "Samedi Saint",
+        couleur: "blanc",
+        temps_liturgique: "paques",
+        semaine: "",
+        fete: "Samedi Saint - L'Église demeure auprès du tombeau dans le silence",
+      },
+      messes: [],
+      lectures: {
+        meditation: {
+          type: "meditation",
+          titre: "Méditation du Samedi Saint",
+          contenu:
+            "Le Samedi saint, l'Église demeure auprès du tombeau dans le silence. C'est un jour de recueillement et d'attente. Pour la Veillée Pascale, voir au Dimanche de Pâques.",
+          reference: "",
+          ref: "",
+          intro_lue: "Méditation pour le Samedi Saint",
+        },
+      },
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    },
+  )
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  let date = searchParams.get("date") || new Date().toISOString().split("T")[0]
+  const date = searchParams.get("date") || new Date().toISOString().split("T")[0]
   const zone = searchParams.get("zone") || "france"
 
-  // Fallback dates : [date, date-1, date+1, today]
-  const today = new Date().toISOString().split("T")[0]
-  const dateObj = new Date(date)
-  const fallbackDates = [
-    date,
-    new Date(dateObj.getTime() - 86400000).toISOString().split("T")[0],
-    new Date(dateObj.getTime() + 86400000).toISOString().split("T")[0],
-    today
-  ]
+  try {
+    console.log(`Récupération des lectures AELF pour ${date}`)
 
-  for (const tryDate of fallbackDates) {
-    console.log(`📅 Requête lectures pour ${tryDate} (zone: ${zone})`)
-    try {
-      console.log(`Récupération des lectures AELF pour ${tryDate}`)
+    const dateObj = new Date(date)
+    const isSamediSaint = await checkIfSamediSaint(date, zone)
 
-      // Endpoint principal AELF
-      const endpoints = [
-        `https://api.aelf.org/v1/messes/${tryDate}/${zone}`,
-        `https://api.aelf.org/v1/messes/${tryDate}`,
-        `https://www.aelf.org/api/v1/messes/${tryDate}`
-      ];
-      
-      let lastError = null;
-      
-      // Essayer chaque endpoint jusqu'à ce qu'un fonctionne
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`🔄 Tentative avec ${endpoint}`);
-          
-          const response = await fetchWithTimeout(endpoint, {
+    if (isSamediSaint) {
+      console.log("Samedi Saint détecté - redirection vers la Veillée Pascale")
+      return handleSamediSaint(date, zone)
+    }
+
+    // Endpoint principal AELF
+    const endpoint = `https://api.aelf.org/v1/messes/${date}/${zone}`
+
+    const response = await fetch(endpoint, {
       method: "GET",
       headers: {
-        "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-        "Origin": "https://www.aelf.org",
-        "Referer": "https://www.aelf.org/",
+        Accept: "application/json",
+        "User-Agent": "LuxLectio/1.0 (Application liturgique)",
+        Referer: "https://www.aelf.org/",
       },
-      cache: 'no-store',
       next: { revalidate: 3600 }, // Cache d'une heure
     })
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+    if (!response.ok) {
+      throw new Error(`Erreur API AELF: ${response.status} ${response.statusText}`)
+    }
 
-        const responseText = await response.text();
-        if (!responseText) {
-          throw new Error('Réponse vide');
-        }
-
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          console.error('Erreur de parsing JSON:', e);
-          throw new Error('Réponse invalide: ' + responseText.substring(0, 100));
-        }
-
-        if (!data || Object.keys(data).length === 0) {
-          throw new Error('Données vides');
-        }
-
-        console.log('✅ Succès avec', endpoint);
+    const data = await response.json()
 
     // Nouvelle normalisation : expose tous les champs riches de chaque lecture
     const normalizedData = {
       informations: {
         ...data.informations,
-        date: data.informations?.date || tryDate,
+        date: data.informations?.date || date,
         jour_liturgique_nom: data.informations?.jour_liturgique_nom || data.informations?.nom || "Jour liturgique",
         couleur: data.informations?.couleur || "vert",
         temps_liturgique: data.informations?.temps_liturgique || "ordinaire",
@@ -121,19 +183,71 @@ export async function GET(request: NextRequest) {
     }
 
     // Extraction complète des lectures, indexées par type, avec tous les champs
-    // Traiter toutes les messes disponibles pour capturer toutes les lectures (notamment les vigiles pascales)
-    if (normalizedData.messes?.length > 0) {
-      normalizedData.messes.forEach((messe: any, messeIndex: number) => {
-        if (messe.lectures) {
-          // Grouper les lectures par type pour gérer les versions multiples (longue/brève)
-          const lecturesByType: { [key: string]: any[] } = {}
-          
-          messe.lectures.forEach((lecture: any, lectureIndex: number) => {
+    if (normalizedData.messes[0]?.lectures) {
+      normalizedData.messes[0].lectures.forEach((lecture: any) => {
+        if (lecture.type) {
+          normalizedData.lectures[lecture.type] = {
+            type: lecture.type,
+            titre: lecture.titre || "",
+            contenu: lecture.contenu || "",
+            reference: lecture.reference || lecture.ref || "",
+            ref: lecture.ref || lecture.reference || "",
+            refrain_psalmique: lecture.refrain_psalmique || null,
+            verset_evangile: lecture.verset_evangile || null,
+            intro_lue: lecture.intro_lue || null,
+            ref_refrain: lecture.ref_refrain || null,
+            ref_verset: lecture.ref_verset || null,
+          }
+        }
+      })
+    }
+
+    return NextResponse.json(normalizedData, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    })
+  } catch (error) {
+    console.error("Erreur lors de la récupération des lectures:", error)
+
+    try {
+      // Check if it's Samedi Saint and redirect to Easter Vigil
+      const isSamediSaint = await checkIfSamediSaint(date, zone)
+      if (isSamediSaint) {
+        return handleSamediSaint(date, zone)
+      }
+
+      const alternativeEndpoint = `https://www.aelf.org/api/v1/messes/${date}`
+
+      const alternativeResponse = await fetch(alternativeEndpoint, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "LuxLectio/1.0",
+        },
+      })
+
+      if (alternativeResponse.ok) {
+        const alternativeData = await alternativeResponse.json()
+
+        // Normalisation des données alternatives
+        const normalizedData = {
+          informations: {
+            date,
+            jour_liturgique_nom: alternativeData.nom || "Jour liturgique",
+            couleur: alternativeData.couleur || "vert",
+            temps_liturgique: alternativeData.temps_liturgique || "ordinaire",
+          },
+          messes: alternativeData.messes || [],
+          lectures: {} as { [key: string]: any },
+        }
+
+        // Extraction des lectures
+        if (normalizedData.messes[0]?.lectures) {
+          normalizedData.messes[0].lectures.forEach((lecture: any) => {
             if (lecture.type) {
-              if (!lecturesByType[lecture.type]) {
-                lecturesByType[lecture.type] = []
-              }
-              lecturesByType[lecture.type].push({
+              normalizedData.lectures[lecture.type] = {
                 type: lecture.type,
                 titre: lecture.titre || "",
                 contenu: lecture.contenu || "",
@@ -144,142 +258,30 @@ export async function GET(request: NextRequest) {
                 intro_lue: lecture.intro_lue || null,
                 ref_refrain: lecture.ref_refrain || null,
                 ref_verset: lecture.ref_verset || null,
-                messe_nom: messe.nom || `Messe ${messeIndex + 1}`,
-                messe_index: messeIndex,
-                lecture_index: lectureIndex,
-                version_index: lecturesByType[lecture.type].length, // Pour identifier longue/brève
-              })
-            }
-          })
-          
-          // Ajouter les lectures groupées par type
-          Object.keys(lecturesByType).forEach(type => {
-            const lecturesOfType = lecturesByType[type]
-            if (lecturesOfType.length === 1) {
-              // Une seule version : utiliser directement le type comme clé
-              const lectureKey = normalizedData.messes.length > 1 
-                ? `${type}_messe${messeIndex}` 
-                : type
-              normalizedData.lectures[lectureKey] = lecturesOfType[0]
-            } else {
-              // Plusieurs versions : créer un tableau avec les versions
-              const lectureKey = normalizedData.messes.length > 1 
-                ? `${type}_messe${messeIndex}` 
-                : type
-              normalizedData.lectures[lectureKey] = {
-                type: type,
-                versions: lecturesOfType,
-                messe_nom: messe.nom || `Messe ${messeIndex + 1}`,
-                messe_index: messeIndex,
-                has_multiple_versions: true,
               }
             }
           })
         }
-      })
-    }
 
-    if (!normalizedData.messes?.length && !Object.keys(normalizedData.lectures || {}).length) {
-      throw new Error('Aucune lecture disponible');
-    }
-
-    // Si nous arrivons ici, nous avons des données valides
-    return NextResponse.json(normalizedData, {
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-        "Pragma": "no-cache",
-      },
-    });
-
-      } catch (error) {
-        console.error(`❌ Échec avec ${endpoint}:`, error);
-        lastError = error;
-        continue;
+        return NextResponse.json(normalizedData, {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        })
       }
+    } catch (alternativeError) {
+      console.error("Erreur avec l'endpoint alternatif:", alternativeError)
     }
-  } catch (error) {
-    console.error(`❌ Fallback sur la date ${tryDate} échoué:`, error);
-    continue;
+
+    // Si tout échoue, renvoyer une erreur
+    return NextResponse.json(
+      {
+        error: "Impossible de récupérer les lectures liturgiques",
+        message: "Veuillez consulter directement le site AELF.org",
+      },
+      { status: 503 },
+    )
   }
 }
-  // Si aucun fallback n'a marché, retourner des données de base
-  console.log('⚠️ Aucune donnée AELF disponible, utilisation des données de fallback');
-  
-  const fallbackData = {
-    informations: {
-      date: date,
-      jour_liturgique_nom: "Jour liturgique",
-      couleur: "vert",
-      temps_liturgique: "ordinaire",
-      semaine: "",
-      fete: "",
-    },
-    messes: [],
-    lectures: {
-      premiere_lecture: {
-        type: "premiere_lecture",
-        titre: "Première lecture",
-        contenu: "Lecture non disponible pour cette date.",
-        reference: "",
-        ref: "",
-        refrain_psalmique: null,
-        verset_evangile: null,
-        intro_lue: null,
-        messe_nom: "Messe du jour",
-        messe_index: 0,
-        lecture_index: 0,
-        version_index: 1,
-      },
-      psaume: {
-        type: "psaume",
-        titre: "Psaume",
-        contenu: "Psaume non disponible pour cette date.",
-        reference: "",
-        ref: "",
-        refrain_psalmique: null,
-        verset_evangile: null,
-        intro_lue: null,
-        messe_nom: "Messe du jour",
-        messe_index: 0,
-        lecture_index: 1,
-        version_index: 1,
-      },
-      deuxieme_lecture: {
-        type: "deuxieme_lecture",
-        titre: "Deuxième lecture",
-        contenu: "Deuxième lecture non disponible pour cette date.",
-        reference: "",
-        ref: "",
-        refrain_psalmique: null,
-        verset_evangile: null,
-        intro_lue: null,
-        messe_nom: "Messe du jour",
-        messe_index: 0,
-        lecture_index: 2,
-        version_index: 1,
-      },
-      evangile: {
-        type: "evangile",
-        titre: "Évangile",
-        contenu: "Évangile non disponible pour cette date.",
-        reference: "",
-        ref: "",
-        refrain_psalmique: null,
-        verset_evangile: null,
-        intro_lue: null,
-        messe_nom: "Messe du jour",
-        messe_index: 0,
-        lecture_index: 3,
-        version_index: 1,
-      }
-    }
-  };
-
-  return NextResponse.json(fallbackData, {
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate",
-      "Pragma": "no-cache",
-    },
-  });
-}
-

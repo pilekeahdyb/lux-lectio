@@ -1,4 +1,3 @@
-
 // Script Node.js pour corriger l'italique dans tous les fichiers JSON de la Bible
 // Règle : le texte n'est en italique que s'il commence et finit par un guillemet (même sur plusieurs versets)
 // Usage : node scripts/fix_italics_quotes.js

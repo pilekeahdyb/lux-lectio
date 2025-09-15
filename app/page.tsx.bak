@@ -306,4 +306,3 @@ function ReadingsTabs({ readings, accentColor }: { readings: any[], accentColor:
 
 
 export default HomePage
-
