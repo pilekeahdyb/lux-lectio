@@ -76,6 +76,7 @@ const allBibleBooks: BibleBook[] = [
   { id: "1m", name: "1 Maccabées", chapters: 16, testament: "AT" },
   { id: "2m", name: "2 Maccabées", chapters: 15, testament: "AT" },
   // Nouveau Testament (inchangé)
+  // ... (ajoutez tous les autres livres ici)
   { id: "mt", name: "Matthieu", chapters: 28, testament: "NT" },
   { id: "mc", name: "Marc", chapters: 16, testament: "NT" },
   { id: "lc", name: "Luc", chapters: 24, testament: "NT" },
@@ -549,58 +550,67 @@ const allBibleBooks: BibleBook[] = [
           {/* Lecteur de chapitre + barre de navigation lectures */}
           {selectedBook && chapterVerses.length === 0 && chapterContent && (
             <>
-              {/* Barre de navigation lectures - scroll horizontal */}
-              <div
-                className="flex overflow-x-auto no-scrollbar gap-4 mb-6 px-2"
-                style={{ WebkitOverflowScrolling: "touch" }}
-              >
-                {["lecture_1", "psaume", "lecture_2", "evangile"].map((type, idx) => {
-                  // Lecture active = nette, autres = floues
-                  // Pour la démo, lecture_1 est active
-                  const isActive = idx === 0
-                  return (
-                    <button
-                      key={type}
-                      className={`min-w-[140px] px-4 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none ${isActive ? "bg-liturgical-primary text-white shadow-lg" : "bg-liturgical-primary/10 text-liturgical-primary opacity-60 blur-sm"}`}
-                      style={{ filter: isActive ? "none" : "blur(2px)", opacity: isActive ? 1 : 0.6 }}
-                      onClick={() => {
-                        const el = document.getElementById(type)
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
-                      }}
-                    >
-                      {type === "lecture_1" && "Première lecture"}
-                      {type === "psaume" && "Psaume"}
-                      {type === "lecture_2" && "Deuxième lecture"}
-                      {type === "evangile" && "Évangile"}
-                    </button>
-                  )
-                })}
+              {/* Barre de navigation lectures - scroll horizontal améliorée */}
+              <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-liturgical-primary/40 scrollbar-track-transparent mb-4 px-2" style={{ WebkitOverflowScrolling: "touch" }}>
+                <div className="flex flex-row gap-2 min-w-[600px]">
+                  {[
+                    { type: "lecture_1", label: "Première lecture" },
+                    { type: "psaume", label: "Psaume" },
+                    { type: "lecture_2", label: "Deuxième lecture" },
+                    { type: "evangile", label: "Évangile" },
+                  ].map((item, idx) => {
+                    // Lecture active = nette, autres = floues (pour la démo, lecture_1 est active)
+                    const isActive = idx === 0
+                    return (
+                      <button
+                        key={item.type}
+                        className={`min-w-[140px] px-4 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none whitespace-nowrap ${isActive ? "bg-liturgical-primary text-white shadow-lg" : "bg-liturgical-primary/10 text-liturgical-primary opacity-60"}`}
+                        style={{ opacity: isActive ? 1 : 0.6 }}
+                        onClick={() => {
+                          const el = document.getElementById(item.type)
+                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-              {/* Slider horizontal des lectures avec ReadingCard et données réelles du jour */}
-              <div className="w-full overflow-x-auto no-scrollbar pb-4">
-                <div className="flex flex-row gap-6 min-w-[600px] px-2">
+              {/* Slider horizontal des lectures avec titres séparés et espacement réduit */}
+              <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-liturgical-primary/40 scrollbar-track-transparent pb-2">
+                <div className="flex flex-row gap-3 min-w-[600px] px-2">
                   {(() => {
-                    // Extraire les lectures du jour depuis les données réelles (exemple)
-                    // Remplace lecturesData par ta source réelle (API, JSON, etc.)
-                    const lecturesData = [
-                      // lecture_1
-                      chapterVerses.find((v: any) => v.type === "lecture_1"),
-                      // psaume
-                      chapterVerses.find((v: any) => v.type === "psaume"),
-                      // lecture_2
-                      chapterVerses.find((v: any) => v.type === "lecture_2"),
-                      // evangile
-                      chapterVerses.find((v: any) => v.type === "evangile"),
-                    ].filter(Boolean)
-                    return lecturesData.map((lecture, idx) => (
+                    const lectureTypes = [
+                      { type: "lecture_1", label: "Première lecture" },
+                      { type: "psaume", label: "Psaume" },
+                      { type: "lecture_2", label: "Deuxième lecture" },
+                      { type: "evangile", label: "Évangile" },
+                    ];
+                    const lecturesData = lectureTypes.map(({ type, label }) => {
+                      const lecture = chapterVerses.find((v: any) => v && v.type === type && v.reference && v.text)
+                      return lecture ? { ...lecture, label, type } : null
+                    }).filter(Boolean);
+                    if (lecturesData.length === 0) {
+                      return (
+                        <div className="text-center w-full text-muted-foreground">Aucune lecture trouvée pour ce chapitre.</div>
+                      );
+                    }
+                    return lecturesData.map((lecture: any, idx: number) => (
                       <div key={lecture.type || idx} className="flex-shrink-0 w-[340px]">
-                        <ReadingCard
-                          reading={lecture}
-                          type={lecture.type as any}
-                          className={idx === 0 ? "" : "opacity-60 blur-sm"}
-                        />
+                        {/* Titre hors de la box */}
+                        <div className="text-base font-semibold text-liturgical-primary mb-1 text-center">{lecture.label}</div>
+                        {lecture.reference && lecture.text ? (
+                          <ReadingCard
+                            reading={lecture}
+                            type={lecture.type as any}
+                            className="mb-0"
+                          />
+                        ) : (
+                          <div className="text-center text-xs text-muted-foreground">Lecture incomplète</div>
+                        )}
                       </div>
-                    ))
+                    ));
                   })()}
                 </div>
               </div>

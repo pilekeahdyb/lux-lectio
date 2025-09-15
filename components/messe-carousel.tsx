@@ -41,11 +41,11 @@ export function MesseCarousel({ messes }: MesseCarouselProps) {
       <div className="w-full flex justify-center">
         {/* Carousel horizontal des lectures de la messe courante */}
         <div
-          className="flex gap-6 overflow-x-auto pb-2 no-scrollbar touch-scroll"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent touch-scroll"
+          style={{ WebkitOverflowScrolling: "touch", scrollbarColor: '#bfdbfe transparent', scrollbarWidth: 'thin' }}
         >
           {currentMesse.lectures.map((lecture, idx) => (
-            <div key={lecture.id || idx} className="min-w-[340px] max-w-[480px] flex-shrink-0">
+            <div key={lecture.id || idx} className="min-w-[320px] max-w-[480px] flex-shrink-0">
               <ReadingCard reading={lecture} type={lecture.type} />
             </div>
           ))}
