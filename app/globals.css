@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "./custom-scrollbar.css";
+@import "../styles/custom-scrollbar.css";
 
 @layer base {
   :root {

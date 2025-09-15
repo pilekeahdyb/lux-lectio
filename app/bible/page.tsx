@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 // On ne charge plus statiquement geneseData, on utilisera un import dynamique
 import { Search, Book, Star, Bookmark, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,7 +24,10 @@ interface BibleVerse {
   text: string
 }
 
-const bibleBooks: BibleBook[] = [
+// Liste complète des livres (ne pas modifier)
+
+export default function Page() {
+const allBibleBooks: BibleBook[] = [
   // Ancien Testament
   { id: "gn", name: "Genèse", chapters: 50, testament: "AT" },
   { id: "ex", name: "Exode", chapters: 40, testament: "AT" },
@@ -38,23 +41,41 @@ const bibleBooks: BibleBook[] = [
   { id: "2s", name: "2 Samuel", chapters: 24, testament: "AT" },
   { id: "1r", name: "1 Rois", chapters: 22, testament: "AT" },
   { id: "2r", name: "2 Rois", chapters: 25, testament: "AT" },
+  { id: "1ch", name: "1 Chroniques", chapters: 29, testament: "AT" },
+  { id: "2ch", name: "2 Chroniques", chapters: 36, testament: "AT" },
+  { id: "esd", name: "Esdras", chapters: 10, testament: "AT" },
+  { id: "ne", name: "Néhémie", chapters: 13, testament: "AT" },
+  { id: "tb", name: "Tobie", chapters: 14, testament: "AT" },
+  { id: "jdt", name: "Judith", chapters: 16, testament: "AT" },
+  { id: "es", name: "Esther", chapters: 16, testament: "AT" },
+  { id: "job", name: "Job", chapters: 42, testament: "AT" },
   { id: "ps", name: "Psaumes", chapters: 150, testament: "AT" },
   { id: "pr", name: "Proverbes", chapters: 31, testament: "AT" },
   { id: "ec", name: "Ecclésiaste", chapters: 12, testament: "AT" },
+  { id: "ct", name: "Cantique des Cantiques", chapters: 8, testament: "AT" },
+  { id: "sag", name: "Sagesse", chapters: 19, testament: "AT" },
+  { id: "sir", name: "Siracide", chapters: 51, testament: "AT" },
   { id: "is", name: "Isaïe", chapters: 66, testament: "AT" },
   { id: "jr", name: "Jérémie", chapters: 52, testament: "AT" },
+  { id: "lm", name: "Lamentations", chapters: 5, testament: "AT" },
   { id: "ba", name: "Baruch", chapters: 6, testament: "AT" },
   { id: "ez", name: "Ézéchiel", chapters: 48, testament: "AT" },
   { id: "dn", name: "Daniel", chapters: 14, testament: "AT" },
+  { id: "os", name: "Osée", chapters: 14, testament: "AT" },
+  { id: "jl", name: "Joël", chapters: 4, testament: "AT" },
   { id: "am", name: "Amos", chapters: 9, testament: "AT" },
-  { id: "es", name: "Esther", chapters: 16, testament: "AT" },
-  { id: "hos", name: "Hosea", chapters: 14, testament: "AT" },
-  { id: "hag", name: "Haggai", chapters: 2, testament: "AT" },
-  { id: "hab", name: "Habakkuk", chapters: 3, testament: "AT" },
-  { id: "ezr", name: "Ezra", chapters: 10, testament: "AT" },
-  { id: "1ch", name: "1 Chroniques", chapters: 29, testament: "AT" },
-
-  // Nouveau Testament
+  { id: "ab", name: "Abdias", chapters: 1, testament: "AT" },
+  { id: "jon", name: "Jonas", chapters: 4, testament: "AT" },
+  { id: "mi", name: "Michée", chapters: 7, testament: "AT" },
+  { id: "na", name: "Nahum", chapters: 3, testament: "AT" },
+  { id: "ha", name: "Habacuc", chapters: 3, testament: "AT" },
+  { id: "so", name: "Sophonie", chapters: 3, testament: "AT" },
+  { id: "ag", name: "Aggée", chapters: 2, testament: "AT" },
+  { id: "za", name: "Zacharie", chapters: 14, testament: "AT" },
+  { id: "ml", name: "Malachie", chapters: 3, testament: "AT" },
+  { id: "1m", name: "1 Maccabées", chapters: 16, testament: "AT" },
+  { id: "2m", name: "2 Maccabées", chapters: 15, testament: "AT" },
+  // Nouveau Testament (inchangé)
   { id: "mt", name: "Matthieu", chapters: 28, testament: "NT" },
   { id: "mc", name: "Marc", chapters: 16, testament: "NT" },
   { id: "lc", name: "Luc", chapters: 24, testament: "NT" },
@@ -82,7 +103,6 @@ const bibleBooks: BibleBook[] = [
   { id: "ap", name: "Apocalypse", chapters: 22, testament: "NT" },
 ]
 
-export default function BiblePage() {
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null)
   const [selectedChapter, setSelectedChapter] = useState<number>(1)
   const [searchQuery, setSearchQuery] = useState("")
@@ -91,38 +111,109 @@ export default function BiblePage() {
   const [chapterVerses, setChapterVerses] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [bookmarks, setBookmarks] = useState<string[]>([])
+  // Liste dynamique des fichiers JSON présents dans /public/bible (générée côté client)
+  const [availableFiles, setAvailableFiles] = useState<string[]>([])
+  useEffect(() => {
+    // On ne peut pas lister les fichiers côté client, donc on hardcode la liste générée côté serveur (voir scripts ou build)
+    setAvailableFiles([
+      "Genesis.json","Exodus.json","Leviticus.json","Numbers.json","Deuteronomy.json","Joshua.json","Judges.json","Ruth.json","I_Samuel.json","II_Samuel.json","I_Kings.json","II_Kings.json","I_Chronicles.json","II_Chronicles.json","Ezra.json","Nehemiah.json","Tobit.json","Judith.json","Esther.json","Job.json","Psalms.json","Proverbs.json","Ecclesiastes.json","Song_of_Solomon.json","Wisdom.json","Sirach.json","Isaiah.json","Jeremiah.json","Lamentations.json","Baruch.json","Ezekiel.json","Daniel.json","Hosea.json","Joel.json","Amos.json","Obadiah.json","Jonah.json","Micah.json","Nahum.json","Habakkuk.json","Zephaniah.json","Haggai.json","Zechariah.json","Malachi.json","Matthew.json","Mark.json","Luke.json","John.json","Acts.json","Romans.json","I_Corinthians.json","II_Corinthians.json","Galatians.json","Ephesians.json","Philippians.json","Colossians.json","I_Thessalonians.json","II_Thessalonians.json","I_Timothy.json","II_Timothy.json","Titus.json","Philemon.json","Hebrews.json","James.json","I_Peter.json","II_Peter.json","I_John.json","II_John.json","III_John.json","Jude.json","Revelation_of_John.json","I_Maccabees.json","II_Maccabees.json"
+    ])
+  }, [])
+  // Mapping complet pour tous les livres, y compris deutérocanoniques
+  const fileMap: { [key: string]: string } = {
+    gn: "Genesis.json",
+    ex: "Exodus.json",
+    lv: "Leviticus.json",
+    nb: "Numbers.json",
+    dt: "Deuteronomy.json",
+    jos: "Joshua.json",
+    jg: "Judges.json",
+    rt: "Ruth.json",
+  "1s": "I_Samuel.json",
+  "2s": "II_Samuel.json",
+  "1r": "I_Kings.json",
+  "2r": "II_Kings.json",
+  "1ch": "I_Chronicles.json",
+  "2ch": "II_Chronicles.json",
+    ezr: "Ezra.json",
+    ne: "Nehemiah.json",
+    tb: "Tobit.json",
+    jdt: "Judith.json",
+    es: "Esther.json",
+    job: "Job.json",
+    ps: "Psalms.json",
+    pr: "Proverbs.json",
+    ec: "Ecclesiastes.json",
+    ct: "Song_of_Solomon.json",
+    sag: "Wisdom.json",
+    sir: "Sirach.json",
+    is: "Isaiah.json",
+    jr: "Jeremiah.json",
+    lm: "Lamentations.json",
+    ba: "Baruch.json",
+    ez: "Ezekiel.json",
+    dn: "Daniel.json",
+    os: "Hosea.json",
+    jl: "Joel.json",
+    am: "Amos.json",
+    ab: "Obadiah.json",
+    jon: "Jonah.json",
+    mi: "Micah.json",
+    na: "Nahum.json",
+    ha: "Habakkuk.json",
+    so: "Zephaniah.json",
+    ag: "Haggai.json",
+    za: "Zechariah.json",
+    ml: "Malachi.json",
+    mt: "Matthew.json",
+    mc: "Mark.json",
+    lc: "Luke.json",
+    jn: "John.json",
+    ac: "Acts.json",
+    rm: "Romans.json",
+  "1co": "I_Corinthians.json",
+  "2co": "II_Corinthians.json",
+    ga: "Galatians.json",
+    ep: "Ephesians.json",
+    ph: "Philippians.json",
+    col: "Colossians.json",
+  "1th": "I_Thessalonians.json",
+  "2th": "II_Thessalonians.json",
+  "1tm": "I_Timothy.json",
+  "2tm": "II_Timothy.json",
+    tt: "Titus.json",
+    phm: "Philemon.json",
+    he: "Hebrews.json",
+    jc: "James.json",
+  "1p": "I_Peter.json",
+  "2p": "II_Peter.json",
+  "1jn": "I_John.json",
+  "2jn": "II_John.json",
+  "3jn": "III_John.json",
+    jude: "Jude.json",
+    ap: "Revelation_of_John.json",
+  "1m": "I_Maccabees.json",
+  "2m": "II_Maccabees.json",
+  }
+  const bibleBooks = useMemo(() => {
+    return allBibleBooks.filter(book => {
+      const file = fileMap[book.id]
+      return file && availableFiles.includes(file)
+    })
+  }, [availableFiles])
 
   const fetchChapterContent = async (bookId: string, chapter: number) => {
     setLoading(true)
     try {
       let data: any = null
 
-      const bookFileMap: { [key: string]: string } = {
-        gn: "genesis",
-        ex: "exodus",
-        dt: "deuteronomy",
-        ec: "ecclesiastes",
-        ep: "ephesians",
-        ba: "baruch",
-        am: "amos",
-        ac: "acts",
-        dn: "daniel",
-        col: "colossians",
-        es: "esther",
-        ga: "galatians",
-        he: "hebrews",
-        "1co": "i_corinthians",
-        hos: "hosea",
-        ez: "ezekiel",
-        hag: "haggai",
-        hab: "habakkuk",
-        ezr: "ezra",
-        "1ch": "i_chronicles",
+      // Génère le nom de fichier à partir du mapping complet
+      const book = bibleBooks.find((b) => b.id === bookId)
+      let fileName = ""
+      if (book) {
+        fileName = fileMap[book.id]?.replace(/\.json$/, "") || ""
       }
-
-      const fileName = bookFileMap[bookId]
       if (fileName) {
-        // Try to load the JSON file
         const response = await fetch(`/bible/${fileName}.json`)
         if (response.ok) {
           data = await response.json()
@@ -132,30 +223,17 @@ export default function BiblePage() {
       if (data && data.chapters) {
         // Find the requested chapter
         const chapterData = data.chapters.find((c: any) => c.chapter === chapter)
-        if (chapterData && chapterData.verses) {
+        if (chapterData && chapterData.verses && chapterData.verses.length > 0) {
           setChapterVerses(chapterData.verses)
           setChapterContent("")
         } else {
-          setChapterContent(generateDemoContent(bookId, chapter))
+          setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Aucun contenu pour ce chapitre.</p></div>`)
           setChapterVerses([])
         }
       } else {
-        // Fallback for books not yet available
-        if (bookId === "gn") {
-          data = await import(`../../public/genese.json`)
-          if (data && data.chapitres) {
-            const chapObj = data.chapitres.find((c: any) => c.chapitre === chapter)
-            const verses = chapObj ? chapObj.versets : []
-            setChapterVerses(verses)
-            setChapterContent("")
-          } else {
-            setChapterContent(generateDemoContent(bookId, chapter))
-            setChapterVerses([])
-          }
-        } else {
-          setChapterContent(generateDemoContent(bookId, chapter))
-          setChapterVerses([])
-        }
+        // Fallback pour livre non disponible ou vide
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Aucun contenu pour ce livre.</p></div>`)
+        setChapterVerses([])
       }
     } catch (error) {
       console.error("Error loading chapter:", error)
