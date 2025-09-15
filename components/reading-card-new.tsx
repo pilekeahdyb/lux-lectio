@@ -2,20 +2,24 @@ import type { AelfReading } from "@/lib/api"
 
 interface ReadingCardProps {
   reading: AelfReading
-  type: "lecture_1" | "psaume" | "lecture_2" | "evangile"
+  type: "lecture_1" | "psaume" | "lecture_2" | "evangile" | "lecture" | "cantique" | "sequence"
   className?: string
 }
 
 const typeLabels = {
   lecture_1: "Première lecture",
+  lecture: "Lecture",
   psaume: "Psaume",
+  cantique: "Cantique",
   lecture_2: "Deuxième lecture",
   evangile: "Évangile",
+  sequence: "Séquence",
 }
 
 export function ReadingCard({ reading, type, className = "" }: ReadingCardProps) {
   const reference = reading.reference || reading.ref || ""
-  const readingLabel = reading.intro_lue || typeLabels[type]
+  const displayType = type === "lecture" ? "lecture_1" : type
+  const readingLabel = reading.intro_lue || typeLabels[displayType] || typeLabels[type] || "Lecture"
 
   return (
     <div className={`w-full my-6 space-y-4 ${className}`}>
@@ -47,7 +51,7 @@ export function ReadingCard({ reading, type, className = "" }: ReadingCardProps)
           </div>
         )}
         <div
-          className={`prose prose-sm max-w-none dark:prose-invert leading-relaxed ${type === "psaume" ? "italic" : ""}`}
+          className={`prose prose-sm max-w-none dark:prose-invert leading-relaxed ${type === "psaume" || type === "cantique" ? "italic" : ""}`}
           dangerouslySetInnerHTML={{ __html: reading.contenu }}
         />
       </div>

@@ -66,7 +66,7 @@ export function ReadingsTabs({ readings, accentColor }: ReadingsTabsProps) {
               key={idx}
               value={String(idx)}
               ref={(el: HTMLButtonElement | null) => { triggerRefs.current[idx] = el; }}
-              className={`px-3 py-1 rounded-md font-medium flex items-center gap-1 transition-all duration-300 whitespace-nowrap flex-shrink-0 text-black text-sm
+              className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all duration-300 whitespace-nowrap flex-shrink-0 text-black
                 data-[state=active]:bg-${accentColor}-500
                 data-[state=active]:text-white dark:data-[state=active]:text-white`}
             >

@@ -2,18 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "../styles/scrollbar.css";
-
-@tailwind components;
-@tailwind utilities;
+@import "./custom-scrollbar.css";
 
 @layer base {
   :root {
-    --background: 196 100% 88%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --card: 196 100% 88%;
+    --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-    --popover: 196 100% 88%;
+    --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 45 93% 47%;
     --primary-foreground: 210 40% 98%;
@@ -29,6 +26,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 45 93% 47%;
     --radius: 0.5rem;
+    --app-font-scale: 1; /* Added font scaling support for accessibility */
 
     /* Couleurs liturgiques dynamiques */
     --liturgical-primary: 34 197 94;
@@ -36,6 +34,17 @@
     --liturgical-accent: 16 185 129;
     --liturgical-bg: 240 253 244;
     --liturgical-text: 21 128 61;
+  }
+
+  html {
+    font-size: calc(16px * var(--app-font-scale));
+  }
+
+  /* Ensure minimum font sizes for accessibility */
+  @media (max-width: 640px) {
+    html {
+      font-size: calc(max(14px, 16px * var(--app-font-scale)));
+    }
   }
 
   .dark {
@@ -67,7 +76,166 @@
   }
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, rgb(var(--liturgical-bg)) 0%, hsl(196 100% 88%) 100%);
+    background: linear-gradient(135deg, rgb(var(--liturgical-bg)) 0%, rgb(var(--background)) 100%);
+    /* Enhanced mobile text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Added mobile-specific responsive utilities */
+@layer utilities {
+  /* Mobile-first responsive breakpoints */
+  .xs\:inline {
+    @media (min-width: 475px) {
+      display: inline;
+    }
+  }
+
+  .xs\:hidden {
+    @media (min-width: 475px) {
+      display: none;
+    }
+  }
+
+  /* Touch-friendly tap targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .touch-target-large {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Focus indicators for accessibility */
+  .focus-visible {
+    outline: 2px solid rgb(var(--liturgical-primary));
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .liturgical-card {
+      border-width: 2px;
+    }
+
+    .text-liturgical-primary {
+      font-weight: 600;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-pulse-glow,
+    .animate-gradient,
+    .animate-slide-in-right,
+    .animate-slide-in-left,
+    .animate-scale-in {
+      animation: none;
+    }
+
+    .hover-lift {
+      transition: none;
+    }
+  }
+
+  /* Improved scrollbars for mobile */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+
+  /* No scrollbar utility */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Enhanced touch scrolling */
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Enhanced mobile typography and spacing */
+@layer components {
+  /* Mobile-optimized text sizes */
+  .text-mobile-xs {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  .text-mobile-sm {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .text-mobile-base {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .text-mobile-lg {
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+  .text-mobile-xl {
+    font-size: 1.25rem;
+    line-height: 1.6;
+  }
+
+  /* Mobile-friendly spacing */
+  .space-mobile-tight > * + * {
+    margin-top: 0.5rem;
+  }
+  .space-mobile-normal > * + * {
+    margin-top: 0.75rem;
+  }
+  .space-mobile-relaxed > * + * {
+    margin-top: 1rem;
+  }
+
+  /* Enhanced mobile cards */
+  .mobile-card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+    @apply p-4 sm:p-6;
+    @apply mb-4 sm:mb-6;
+  }
+
+  /* Mobile-optimized buttons */
+  .mobile-button {
+    @apply tap-target;
+    @apply px-4 py-2;
+    @apply text-sm font-medium;
+    @apply rounded-md;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 }
 
@@ -108,7 +276,7 @@
   color: rgb(var(--liturgical-text));
 }
 
-/* Animations et transformations */
+/* Enhanced animations with better mobile performance */
 @keyframes float {
   0%,
   100% {
@@ -174,52 +342,64 @@
   }
 }
 
+/* Optimized animations for mobile performance */
 .animate-float {
   animation: float 3s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient-shift 3s ease infinite;
+  will-change: background-position;
 }
 
 .animate-slide-in-right {
   animation: slide-in-right 0.5s ease-out;
+  will-change: transform, opacity;
 }
 
 .animate-slide-in-left {
   animation: slide-in-left 0.5s ease-out;
+  will-change: transform, opacity;
 }
 
 .animate-scale-in {
   animation: scale-in 0.3s ease-out;
+  will-change: transform, opacity;
 }
 
-/* Effets de hover */
+/* Enhanced mobile hover effects */
 .hover-lift {
   transition: all 0.3s ease;
+  will-change: transform, box-shadow;
 }
 
-.hover-lift:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+@media (hover: hover) {
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
 }
 
 .hover-glow:hover {
   box-shadow: 0 0 20px rgba(var(--liturgical-primary), 0.4);
 }
 
-/* Styles pour le contenu liturgique */
+/* Enhanced mobile typography */
 .prose {
   @apply text-gray-700 dark:text-gray-300;
+  line-height: 1.6;
 }
 
 .prose p {
   @apply mb-3 leading-relaxed;
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
 }
 
 .prose strong {
@@ -230,17 +410,20 @@
   @apply italic text-green-500 dark:text-green-300;
 }
 
-/* Styles pour les cartes liturgiques */
+/* Enhanced mobile liturgical cards */
 .liturgical-card {
-  background: linear-gradient(135deg, rgb(var(--liturgical-bg)) 0%, rgba(135, 206, 235, 0.8) 100%);
+  background: linear-gradient(135deg, rgb(var(--liturgical-bg)) 0%, rgba(255, 255, 255, 0.8) 100%);
   border: 1px solid rgb(var(--liturgical-primary) / 0.2);
   transition: all 0.3s ease;
+  will-change: transform, box-shadow, border-color;
 }
 
-.liturgical-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(var(--liturgical-primary), 0.15);
-  border-color: rgb(var(--liturgical-primary) / 0.4);
+@media (hover: hover) {
+  .liturgical-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(var(--liturgical-primary), 0.15);
+    border-color: rgb(var(--liturgical-primary) / 0.4);
+  }
 }
 
 .dark .liturgical-card {
@@ -273,11 +456,11 @@
 }
 
 .liturgical-blanc {
-  --liturgical-primary: 125 211 252;
-  --liturgical-secondary: 56 189 248;
-  --liturgical-accent: 186 230 253;
-  --liturgical-bg: 240 249 255;
-  --liturgical-text: 2 132 199;
+  --liturgical-primary: 59 130 246;
+  --liturgical-secondary: 37 99 235;
+  --liturgical-accent: 147 197 253;
+  --liturgical-bg: 239 246 255;
+  --liturgical-text: 29 78 216;
 }
 
 .liturgical-rose {

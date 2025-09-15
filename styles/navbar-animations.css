@@ -1,43 +1,103 @@
-.animate-navbar-tab {
-  transition: background 0.3s, color 0.3s, transform 0.3s;
-}
-.animate-navbar-tabs {
-  animation: navbarFadeIn 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes navbarFadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Ajout d'un style pour rendre la barre de scroll bien visible sur la navbar des lectures */
-.mb-2::-webkit-scrollbar {
-  height: 10px !important;
-}
-.mb-2::-webkit-scrollbar-thumb {
-  background: #888 !important;
-  border-radius: 8px !important;
-}
-.mb-2::-webkit-scrollbar-track {
-  background: #e0e0e0 !important;
-}
-
-.scrollbar-thin {
-  scrollbar-width: auto !important;
-  scrollbar-color: #888 #e0e0e0 !important;
-}
-
+/* Simplified and more robust scrollbar styles */
 .scrollbar-visible {
-  overflow-x: scroll !important;
   scrollbar-width: thin;
-  scrollbar-color: #888 #e0e0e0;
+  scrollbar-color: #666 #ddd;
 }
+
 .scrollbar-visible::-webkit-scrollbar {
-  height: 10px;
+  height: 8px;
+  width: 8px;
 }
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
 .scrollbar-visible::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 8px;
+  border-radius: 4px;
+  border: 1px solid #f1f1f1;
 }
-.scrollbar-visible::-webkit-scrollbar-track {
-  background: #e0e0e0;
+
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Force scrollbar visibility on all platforms */
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: #888 !important;
+  visibility: visible !important;
+}
+
+/* Animation utilities */
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
 }

@@ -1,29 +1,14 @@
 // Service API pour récupérer les données liturgiques
 
-export interface ReadingOption {
-  titre?: string;
-  contenu: string;
-  reference?: string;
-}
-
 export interface AelfReading {
-  titre?: string;
-  contenu: string;
-  reference?: string;
-  ref?: string;
-  type?: string;
-  refrain_psalmique?: string;
-  verset_evangile?: string;
-  intro_lue?: string;
-  versions?: {
-    longue: ReadingOption;
-    breve: ReadingOption;
-  };
-  choix?: ReadingOption[];
-  psaume?: {
-    contenu: string;
-    choix?: ReadingOption[];
-  };
+  titre: string
+  contenu: string
+  reference?: string
+  ref?: string
+  type?: string
+  refrain_psalmique?: string
+  verset_evangile?: string
+  intro_lue?: string
 }
 
 export interface AelfData {
@@ -42,62 +27,17 @@ export interface AelfData {
   }[]
 }
 
-function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // Dans le navigateur, utiliser l'URL relative
-    return '';
-  }
-  // En dehors du navigateur (SSR), utiliser l'URL complète
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-}
-
-async function isValidJson(response: Response): Promise<boolean> {
-  try {
-    const clone = response.clone();
-    const text = await clone.text();
-    console.log('Réponse brute:', text);
-    if (!text || text.length === 0) return false;
-    const json = JSON.parse(text);
-    return json !== null && Object.keys(json).length > 0;
-  } catch {
-    return false;
-  }
-}
-
 export async function fetchLiturgicalReadings(date: string): Promise<AelfData> {
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/api/aelf?date=${date}`;
-    console.log('Appel à l\'API interne:', url);
-    
-    const response = await fetch(url, {
+    const response = await fetch(`/api/aelf?date=${date}`, {
       method: "GET",
       headers: {
-        "Accept": "application/json",
-        "Cache-Control": "no-cache",
+        Accept: "application/json",
       },
-      next: { revalidate: 0 },
-    });
+    })
 
-    if (!response.ok || !(await isValidJson(response))) {
-      const responseText = await response.text();
-      console.error('Réponse API non valide:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText
-      });
-      
-      let errorMessage = `Erreur API: ${response.status}`;
-      if (responseText) {
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = `${errorMessage} - ${responseText}`;
-        }
-      }
-      
-      throw new Error("Réponse API non valide: " + responseText)
+    if (!response.ok) {
+      throw new Error(`Erreur API: ${response.status}`)
     }
 
     const data = await response.json()
