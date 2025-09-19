@@ -210,35 +210,64 @@ const allBibleBooks: BibleBook[] = [
 
       // Génère le nom de fichier à partir du mapping complet
       const book = bibleBooks.find((b) => b.id === bookId)
-      let fileName = ""
-      if (book) {
-        fileName = fileMap[book.id]?.replace(/\.json$/, "") || ""
-      }
-      if (fileName) {
-        const response = await fetch(`/bible/${fileName}.json`)
-        if (response.ok) {
-          data = await response.json()
-        }
+      if (!book) {
+        console.error(`Livre non trouvé: ${bookId}`)
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Livre non trouvé.</p></div>`)
+        setChapterVerses([])
+        return
       }
 
-      if (data && data.chapters) {
-        // Find the requested chapter
-        const chapterData = data.chapters.find((c: any) => c.chapter === chapter)
-        if (chapterData && chapterData.verses && chapterData.verses.length > 0) {
-          setChapterVerses(chapterData.verses)
-          setChapterContent("")
-        } else {
-          setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Aucun contenu pour ce chapitre.</p></div>`)
-          setChapterVerses([])
-        }
-      } else {
-        // Fallback pour livre non disponible ou vide
-        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Aucun contenu pour ce livre.</p></div>`)
+      const fileName = fileMap[book.id]
+      if (!fileName) {
+        console.error(`Fichier non trouvé pour le livre: ${book.name} (${book.id})`)
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Contenu non disponible pour ${book.name}.</p></div>`)
         setChapterVerses([])
+        return
       }
+
+      console.log(`📚 Chargement du livre ${book.name} (${fileName}), chapitre ${chapter}`)
+      const response = await fetch(`/bible/${fileName}`)
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      data = await response.json()
+      console.log(`✅ Données chargées pour ${book.name}, recherche du chapitre ${chapter}`)
+
+      if (!data || !data.chapters) {
+        console.error(`Structure de données invalide pour ${book.name}:`, data)
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Format de données incorrect pour ${book.name}.</p></div>`)
+        setChapterVerses([])
+        return
+      }
+
+      // Recherche du chapitre demandé
+      const chapterData = data.chapters.find((c: any) => c.chapter === chapter)
+      if (!chapterData) {
+        console.error(`Chapitre ${chapter} non trouvé dans ${book.name}`)
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Le chapitre ${chapter} n'existe pas dans ${book.name}.</p></div>`)
+        setChapterVerses([])
+        return
+      }
+
+      if (!chapterData.verses || chapterData.verses.length === 0) {
+        console.error(`Aucun verset trouvé pour ${book.name} ${chapter}`)
+        setChapterContent(`<div class="text-center py-8"><p class="text-muted-foreground">Aucun verset disponible pour ${book.name} chapitre ${chapter}.</p></div>`)
+        setChapterVerses([])
+        return
+      }
+
+      console.log(`✅ ${chapterData.verses.length} versets trouvés pour ${book.name} ${chapter}`)
+      setChapterVerses(chapterData.verses)
+      setChapterContent("")
     } catch (error) {
-      console.error("Error loading chapter:", error)
-      setChapterContent(generateDemoContent(bookId, chapter))
+      console.error(`Erreur lors du chargement de ${bookId} ${chapter}:`, error)
+      const book = bibleBooks.find((b) => b.id === bookId)
+      const bookName = book ? book.name : bookId
+      setChapterContent(`<div class="text-center py-8">
+        <p class="text-red-600">Erreur lors du chargement de ${bookName} chapitre ${chapter}</p>
+        <p class="text-muted-foreground text-sm mt-2">Veuillez réessayer ultérieurement</p>
+      </div>`)
       setChapterVerses([])
     } finally {
       setLoading(false)

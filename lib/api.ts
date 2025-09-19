@@ -11,20 +11,102 @@ export interface AelfReading {
   intro_lue?: string
 }
 
+export interface AelfInformations {
+  date: string
+  jour_liturgique_nom: string
+  couleur?: string
+  temps_liturgique?: string
+  semaine?: string
+  fete?: string
+  nom?: string  // Nom de l'office (ex: "Laudes", "Vêpres", etc.)
+}
+
 export interface AelfData {
-  informations: {
-    date: string
-    jour_liturgique_nom: string
-    couleur: string
-    temps_liturgique?: string
-    semaine?: string
-    fete?: string
-  }
+  informations: AelfInformations
   lectures: Record<string, AelfReading>
   messes: {
     nom: string
     lectures: AelfReading[]
   }[]
+}
+
+export interface AelfOfficeIntroduction {
+  type?: string
+  titre?: string
+  contenu?: string
+  antienne?: string
+  hymne?: string
+  psaume_invitatoire?: {
+    type: string
+    titre: string
+    contenu: string
+    antienne_debut?: string
+  }
+}
+
+export interface AelfOfficePsaume {
+  type?: string
+  titre: string
+  contenu: string
+  antienne_debut?: string
+  ref?: string
+}
+
+export interface AelfOfficeContent {
+  type?: string
+  titre?: string
+  contenu: string
+  reference?: string
+  ref?: string
+}
+
+export interface AelfOfficeCantique extends AelfOfficeContent {
+  antienne?: string
+}
+
+export interface AelfOfficeData {
+  informations: AelfInformations
+  office: {
+    introduction?: AelfOfficeIntroduction
+    invitatoire?: AelfOfficeContent
+    hymne?: AelfOfficeContent
+    antienne_1?: AelfOfficeContent
+    antienne_2?: AelfOfficeContent
+    antienne_3?: AelfOfficeContent
+    psaume_1?: AelfOfficePsaume
+    psaume_2?: AelfOfficePsaume
+    psaume_3?: AelfOfficePsaume
+    verset_psalmique?: AelfOfficeContent
+    pericope?: AelfOfficeContent
+    cantique_ancien?: AelfOfficeCantique
+    cantique_nouveau?: AelfOfficeCantique
+    cantique_zacharie?: AelfOfficeCantique
+    cantique_marie?: AelfOfficeCantique
+    cantique_symeon?: AelfOfficeCantique
+    lecture_1?: AelfOfficeContent
+    lecture_2?: AelfOfficeContent
+    lecture_3?: AelfOfficeContent
+    lecture_patristique?: AelfOfficeContent
+    lecture_biblique?: AelfOfficeContent
+    lecture_breve?: AelfOfficeContent
+    repons_1?: AelfOfficeContent
+    repons_2?: AelfOfficeContent
+    repons_3?: AelfOfficeContent
+    repons_bref?: AelfOfficeContent
+    repons_long?: AelfOfficeContent
+    verset_1?: AelfOfficeContent
+    verset_2?: AelfOfficeContent
+    verset_3?: AelfOfficeContent
+    intercessions?: AelfOfficeContent
+    priere?: AelfOfficeContent
+    benediction?: AelfOfficeContent
+    notre_pere?: AelfOfficeContent
+    oraison?: AelfOfficeContent
+    conclusion?: AelfOfficeContent
+    antienne_zacharie?: AelfOfficeContent
+    antienne_marie?: AelfOfficeContent
+    antienne_symeon?: AelfOfficeContent
+  }
 }
 
 export async function fetchLiturgicalReadings(date: string): Promise<AelfData> {
@@ -48,29 +130,11 @@ export async function fetchLiturgicalReadings(date: string): Promise<AelfData> {
   }
 }
 
-export function formatLiturgicalDate(date: Date): string {
-  return date.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-}
-
-export function formatApiDate(date: Date): string {
-  return date.toISOString().split("T")[0]
-}
-
-// Fonction pour obtenir la couleur liturgique
-export function getLiturgicalColor(colorName: string): string {
-  const colors: Record<string, string> = {
-    blanc: "bg-blue-50 text-blue-800",
-    rouge: "bg-red-50 text-red-800",
-    vert: "bg-green-50 text-green-800",
-    violet: "bg-purple-50 text-purple-800",
-    rose: "bg-pink-50 text-pink-800",
-    noir: "bg-gray-100 text-gray-800",
-  }
-
-  return colors[colorName.toLowerCase()] || "bg-green-50 text-green-800"
-}
+export type OfficeType = 
+  | "office_lectures"
+  | "laudes"
+  | "tierce"
+  | "sexte"
+  | "none"
+  | "vepres"
+  | "complies"

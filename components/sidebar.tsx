@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Book, Clock, BookOpen, User, Info, Settings, Heart, Menu, X, Calendar, Cross, Sun, Moon } from "lucide-react"
+import { Book, Clock, BookOpen, User, Info, Settings, Heart, Menu, X, Calendar, Cross, Sun, Moon, Database } from "lucide-react"
 import { CalendarWidget } from "./calendar-widget"
 import { Button } from "@/components/ui/button"
 import { useLiturgical } from "@/components/liturgical-provider"
@@ -16,6 +16,7 @@ const navigation = [
   { name: "Offices", href: "/offices", icon: Clock },
   { name: "Bible", href: "/bible", icon: Book },
   { name: "Saints", href: "/saints", icon: User },
+  { name: "Stockage", href: "/storage", icon: Database },
   { name: "À propos", href: "/about", icon: Info },
   { name: "Paramètres", href: "/settings", icon: Settings },
   { name: "Support", href: "/support", icon: Heart },

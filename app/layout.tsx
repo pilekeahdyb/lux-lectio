@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Sidebar } from "@/components/sidebar"
 import { LiturgicalProvider } from "@/components/liturgical-provider"
+import { PWAStatus } from "@/components/pwa-status"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -39,7 +40,10 @@ export default function RootLayout({
           <LiturgicalProvider>
             <div className="flex min-h-screen bg-background">
               <Sidebar />
-              <main className="flex-1 overflow-auto w-full min-w-0">{children}</main>
+              <main className="flex-1 overflow-auto w-full min-w-0">
+                {children}
+                <PWAStatus />
+              </main>
             </div>
           </LiturgicalProvider>
         </ThemeProvider>

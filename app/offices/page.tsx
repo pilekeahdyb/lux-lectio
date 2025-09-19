@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useLiturgical } from "@/components/liturgical-provider"
+import { OfficeCarousel } from "@/components/office-carousel"
+import type { AelfOfficeData } from "@/lib/api"
 
 const offices = [
   {
@@ -66,14 +68,17 @@ export default function OfficesPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const formatLiturgicalDate = (date: Date) => {
-    return date.toLocaleDateString("fr-FR", {
+  const [formattedDate, setFormattedDate] = useState("")
+
+  useEffect(() => {
+    // Formatage de la date côté client uniquement
+    setFormattedDate(currentDate.toLocaleDateString("fr-FR", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
-    })
-  }
+    }))
+  }, [currentDate])
 
 
   // Récupération dynamique de l'office sélectionné
@@ -83,18 +88,89 @@ export default function OfficesPage() {
       setError(null)
       return
     }
+
     const fetchOffice = async () => {
       setLoading(true)
       setError(null)
+
       try {
-        const dateStr = currentDate.toISOString().split("T")[0]
-        // L'API attend "office-lectures" => "office_lectures"
-        const officeParam = selectedOffice.replace("-", "_")
-        const res = await fetch(`/api/aelf/offices?date=${dateStr}&office=${officeParam}`)
-        if (!res.ok) throw new Error("Erreur lors de la récupération de l'office")
+        // Convertir l'ID de l'office pour l'API AELF
+        let officeType = selectedOffice
+        if (selectedOffice === "office-lectures") {
+          officeType = "lectures"
+        }
+        
+        console.log(`🔄 Chargement de l'office ${officeType}`)
+        
+        const res = await fetch(`/api/offices?office=${officeType}`)
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}))
+          throw new Error(errorData.error || `Erreur HTTP ${res.status} : ${res.statusText}`)
+        }
+
         const data = await res.json()
-        // On prend data.data si présent, sinon data directement (compatibilité)
-        setOfficeData(data.data || data)
+        console.log(`📥 Données reçues pour ${officeType}:`, data)
+        
+        // Vérification de la validité des données
+        if (!data) {
+          throw new Error("Données vides reçues de l'API")
+        }
+        
+        if (!data.office) {
+          throw new Error("L'objet office est manquant dans les données")
+        }
+        
+        // Vérification et normalisation des informations liturgiques
+        if (!data.informations?.jour_liturgique_nom) {
+          console.warn("⚠️ Informations liturgiques manquantes, utilisation des valeurs par défaut")
+          data.informations = {
+            ...data.informations || {},
+            jour_liturgique_nom: "Office du jour"
+          }
+        }
+        
+        // Vérification détaillée du contenu de l'office
+        const officeStructure = {
+          introduction: "Introduction",
+          psaume_1: "Premier psaume",
+          psaume_2: "Deuxième psaume",
+          psaume_3: "Troisième psaume",
+          cantique_ancien: "Cantique de l'Ancien Testament",
+          cantique_zacharie: "Cantique de Zacharie",
+          lecture_breve: "Lecture brève",
+          repons_bref: "Répons",
+          intercessions: "Intercessions",
+          notre_pere: "Notre Père",
+          oraison: "Oraison",
+          conclusion: "Conclusion",
+          antienne_zacharie: "Antienne de Zacharie"
+        };
+
+        console.log("🔍 Analyse du contenu de l'office :");
+        const availableParts: string[] = [];
+        const missingParts: string[] = [];
+
+        Object.entries(officeStructure).forEach(([key, label]) => {
+          const content = data.office[key];
+          if (content && (content.contenu || content.hymne || content.antienne)) {
+            availableParts.push(label);
+            console.log(`✅ ${label} : présent`);
+          } else {
+            missingParts.push(label);
+            console.log(`❌ ${label} : manquant`);
+          }
+        });
+
+        if (availableParts.length === 0) {
+          throw new Error("L'office ne contient aucune partie")
+        }
+
+        if (missingParts.length > 0) {
+          console.warn(`⚠️ Parties manquantes : ${missingParts.join(", ")}`);
+        }
+
+        console.log(`✅ Office valide avec ${availableParts.length}/${Object.keys(officeStructure).length} parties disponibles`);
+        setOfficeData(data)
       } catch (e: any) {
         setError(e.message || "Erreur inconnue")
         setOfficeData(null)
@@ -110,7 +186,7 @@ export default function OfficesPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-liturgical-primary mb-2">Offices des heures</h1>
         <p className="text-muted-foreground">La prière de l'Église pour sanctifier les heures du jour</p>
-        <p className="text-sm text-liturgical-primary font-medium mt-2">{formatLiturgicalDate(currentDate)}</p>
+        <p className="text-sm text-liturgical-primary font-medium mt-2">{formattedDate}</p>
       </div>
 
       {!selectedOffice ? (
@@ -155,98 +231,22 @@ export default function OfficesPage() {
             <Card><CardContent className="p-8 text-center text-red-600">{error}</CardContent></Card>
           )}
           {!loading && !error && officeData && (
-            officeData.html ? (
-              <Card className="border-liturgical-primary/30">
-                <CardHeader>
-                  <CardTitle className="text-liturgical-primary">Office (données brutes du site AELF)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: officeData.html }} />
-                  {officeData.note && (
-                    <p className="mt-4 text-xs text-muted-foreground italic">{officeData.note}</p>
-                  )}
+            <>
+              <Card className="mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Office {officeData.informations.jour_liturgique_nom}</span>
+                    <Badge variant="outline" className="ml-2">
+                      {Object.keys(officeData.office).filter(key => 
+                        officeData.office[key] && 
+                        (officeData.office[key].contenu || officeData.office[key].hymne || officeData.office[key].antienne)
+                      ).length} parties disponibles
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-6">
-                {/* Antienne d'ouverture */}
-                {officeData.antienne && (
-                  <Card className="border-liturgical-primary/30">
-                    <CardHeader>
-                      <CardTitle className="text-liturgical-primary">Antienne d'ouverture</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="italic text-liturgical-primary font-medium">{officeData.antienne}</p>
-                    </CardContent>
-                  </Card>
-                )}
-                {/* Psaumes */}
-                {officeData.psaumes?.map((psaume: any, index: number) => (
-                  <Card key={index}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        {psaume.numero} - {psaume.titre}
-                      </CardTitle>
-                      <p className="text-sm italic text-muted-foreground">Ant. {psaume.antienne}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{psaume.texte}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                {/* Cantique */}
-                {officeData.cantique && (
-                  <Card className="border-amber-200 dark:border-amber-800">
-                    <CardHeader>
-                      <CardTitle className="text-amber-800 dark:text-amber-200">{officeData.cantique.reference}</CardTitle>
-                      <p className="text-sm italic text-amber-600 dark:text-amber-300">
-                        Ant. {officeData.cantique.antienne}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{officeData.cantique.texte}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                {/* Lecture */}
-                {officeData.lecture && (
-                  <Card className="border-blue-200 dark:border-blue-800">
-                    <CardHeader>
-                      <CardTitle className="text-blue-800 dark:text-blue-200">{officeData.lecture.titre}</CardTitle>
-                      <p className="text-sm text-blue-600 dark:text-blue-300">{officeData.lecture.reference}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{officeData.lecture.texte}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                {/* Responsoire */}
-                {officeData.responsoire && (
-                  <Card className="bg-liturgical-primary/5">
-                    <CardContent className="p-4">
-                      <p className="text-liturgical-primary font-medium">{officeData.responsoire}</p>
-                    </CardContent>
-                  </Card>
-                )}
-                {/* Prière */}
-                {officeData.priere && (
-                  <Card className="border-liturgical-primary/30">
-                    <CardHeader>
-                      <CardTitle className="text-liturgical-primary">Prière</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="italic">{officeData.priere}</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )
+              <OfficeCarousel data={officeData as AelfOfficeData} onClose={() => setSelectedOffice(null)} />
+            </>
           )}
         </div>
       )}
