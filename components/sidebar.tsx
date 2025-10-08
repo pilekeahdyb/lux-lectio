@@ -1,6 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
+// Récupère l'utilisateur local
+function useUser() {
+  return useMemo(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lux-user");
+      if (saved) return JSON.parse(saved);
+    }
+    return null;
+  }, [typeof window !== "undefined" && localStorage.getItem("lux-user")]);
+}
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Book, Clock, BookOpen, User, Info, Settings, Heart, Menu, X, Calendar, Cross, Sun, Moon, Database } from "lucide-react"
@@ -23,6 +33,7 @@ const navigation = [
 ]
 
 export function Sidebar() {
+  const user = useUser();
   const [isOpen, setIsOpen] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const { setCurrentDate } = useLiturgical()
@@ -85,7 +96,7 @@ export function Sidebar() {
         )}
       >
         <div className="flex h-full flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-liturgical-primary/20 shadow-2xl">
-          {/* En-tête avec logo et titre uniquement */}
+          {/* En-tête avec logo, titre et nom utilisateur */}
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-600" />
             <div className="relative p-4 sm:p-6">
@@ -101,6 +112,18 @@ export function Sidebar() {
                 <p className="text-xs sm:text-sm opacity-90 drop-shadow text-gray-600 dark:text-gray-300">
                   Compagnon liturgique
                 </p>
+                {user && (
+                  <div className="mt-4 animate-fade-in">
+                    <span className="block text-base font-semibold text-green-700 dark:text-green-400">
+                      {(() => {
+                        const hour = new Date().getHours();
+                        if (hour < 12) return "Bonjour";
+                        if (hour < 18) return "Bon après-midi";
+                        return "Bonsoir";
+                      })()}, {user.firstName} {user.lastName}
+                    </span>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-center space-x-2">
                   {[0, 0.2, 0.4].map((delay) => (
                     <div

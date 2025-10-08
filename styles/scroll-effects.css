@@ -1,0 +1,33 @@
+/* Styles pour le défilement fluide */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.touch-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animation de transition pour les sections */
+.section-transition {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.section-transition.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Styles pour les gradients interactifs */
+.gradient-hover {
+  transition: background-position 0.3s ease-in-out;
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+}
+
+.gradient-hover:hover {
+  background-position: 100% 100%;
+}

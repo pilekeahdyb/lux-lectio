@@ -2,7 +2,7 @@ import type { AelfReading } from "@/lib/api"
 
 interface ReadingCardProps {
   reading: AelfReading
-  type: "lecture_1" | "psaume" | "lecture_2" | "evangile" | "lecture" | "cantique" | "sequence"
+  type: "lecture_1" | "psaume" | "lecture_2" | "evangile" | "lecture" | "cantique" | "sequence" | "antienne"
   className?: string
 }
 
@@ -14,6 +14,7 @@ const typeLabels = {
   lecture_2: "Deuxième lecture",
   evangile: "Évangile",
   sequence: "Séquence",
+  antienne: "Antienne",
 }
 
 export function ReadingCard({ reading, type, className = "" }: ReadingCardProps) {

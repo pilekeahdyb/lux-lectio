@@ -26,7 +26,13 @@ async function fetchWithTimeout(url: string, options: RequestInit & { timeout?: 
 
 function mapToLecture(raw: any): any | null {
   if (!raw) return null
-  const contenu = raw.contenu ?? raw.texte ?? raw.content ?? ""
+  if (typeof raw === "string") {
+    return { contenu: raw }
+  }
+  if (typeof raw === "object" && raw.texte) {
+    return { ...raw, contenu: raw.texte }
+  }
+  const contenu = raw.contenu ?? raw.content ?? ""
   const ref = raw.ref ?? raw.reference ?? raw.references ?? undefined
   return {
     type: raw.type ?? raw.kind ?? "",
@@ -42,22 +48,16 @@ function mapToLecture(raw: any): any | null {
 
 function normalizeOfficeApiDataComplete(apiData: any, officeKey: string) {
   try {
-    console.log('Normalisation complète des données API AELF:', Object.keys(apiData))
-    
     if (!apiData) {
       console.error('❌ Données API nulles ou non définies')
       return null
     }
-    
     // Récupérer les données de l'office spécifique
     const officeData = apiData[officeKey] || apiData
-    
-    // Validation des données minimales requises
     if (!officeData || typeof officeData !== 'object') {
       console.error('❌ Données de l\'office invalides:', officeData)
       return null
     }
-    
     // Structure de base avec informations par défaut
     const normalized: any = {
       nom: officeKey.charAt(0).toUpperCase() + officeKey.slice(1),
@@ -67,46 +67,10 @@ function normalizeOfficeApiDataComplete(apiData: any, officeKey: string) {
       },
       office: {}
     }
-
-    // Mapper les éléments selon la structure officielle
-    if (officeData.introduction) {
-      normalized.office.introduction = {
-        type: 'introduction',
-        titre: 'Introduction',
-        contenu: officeData.introduction,
-      }
+    // Inclure dynamiquement toutes les clés de l'office
+    for (const key of Object.keys(officeData)) {
+      normalized.office[key] = mapToLecture(officeData[key])
     }
-
-    // Traitement des psaumes
-    if (officeData.psaume_1) {
-      normalized.office.psaume_1 = mapToLecture(officeData.psaume_1)
-    }
-    if (officeData.psaume_2) {
-      normalized.office.psaume_2 = mapToLecture(officeData.psaume_2)
-    }
-    if (officeData.psaume_3) {
-      normalized.office.psaume_3 = mapToLecture(officeData.psaume_3)
-    }
-
-    // Autres éléments de l'office
-    const elements = [
-      'hymne',
-      'lecture_breve',
-      'repons_bref',
-      'cantique_ancien',
-      'cantique_zacharie',
-      'intercessions',
-      'notre_pere',
-      'oraison',
-      'conclusion'
-    ]
-
-    elements.forEach(element => {
-      if (officeData[element]) {
-        normalized.office[element] = mapToLecture(officeData[element])
-      }
-    })
-
     return normalized
   } catch (error) {
     console.error('Erreur lors de la normalisation des données:', error)
